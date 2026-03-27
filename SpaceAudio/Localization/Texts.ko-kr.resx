@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+<data name="CurrentCulture" xml:space="preserve"><value>ko-kr</value></data>
+<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
+<data name="PluginCategory" xml:space="preserve"><value>리버브</value></data>
+<data name="PluginDescription" xml:space="preserve"><value>룸 리버브 시뮬레이터</value></data>
+<data name="GroupRoom" xml:space="preserve"><value>방</value></data>
+<data name="GroupSource" xml:space="preserve"><value>음원</value></data>
+<data name="GroupListener" xml:space="preserve"><value>리스너</value></data>
+<data name="GroupReverb" xml:space="preserve"><value>리버브</value></data>
+<data name="GroupMix" xml:space="preserve"><value>믹스</value></data>
+<data name="GroupMaterial" xml:space="preserve"><value>재질</value></data>
+<data name="GroupEditor" xml:space="preserve"><value>에디터</value></data>
+<data name="RoomWidth" xml:space="preserve"><value>너비</value></data>
+<data name="RoomWidthDesc" xml:space="preserve"><value>방 너비(미터)</value></data>
+<data name="RoomHeight" xml:space="preserve"><value>높이</value></data>
+<data name="RoomHeightDesc" xml:space="preserve"><value>방 높이(미터)</value></data>
+<data name="RoomDepth" xml:space="preserve"><value>깊이</value></data>
+<data name="RoomDepthDesc" xml:space="preserve"><value>방 깊이(미터)</value></data>
+<data name="SourceX" xml:space="preserve"><value>X좌표</value></data>
+<data name="SourceY" xml:space="preserve"><value>Y좌표</value></data>
+<data name="SourceZ" xml:space="preserve"><value>Z좌표</value></data>
+<data name="SourcePosDesc" xml:space="preserve"><value>음원 위치</value></data>
+<data name="ListenerPosDesc" xml:space="preserve"><value>리스너 위치</value></data>
+<data name="PreDelay" xml:space="preserve"><value>프리딜레이</value></data>
+<data name="PreDelayDesc" xml:space="preserve"><value>초기 반사까지의 지연</value></data>
+<data name="DecayTime" xml:space="preserve"><value>잔향 시간</value></data>
+<data name="DecayTimeDesc" xml:space="preserve"><value>잔향 감쇠 시간(RT60)</value></data>
+<data name="HfDamping" xml:space="preserve"><value>고역 감쇠</value></data>
+<data name="HfDampingDesc" xml:space="preserve"><value>고주파 감쇠량</value></data>
+<data name="Diffusion" xml:space="preserve"><value>확산</value></data>
+<data name="DiffusionDesc" xml:space="preserve"><value>잔향 확산도</value></data>
+<data name="EarlyLevel" xml:space="preserve"><value>초기 반사 레벨</value></data>
+<data name="EarlyLevelDesc" xml:space="preserve"><value>초기 반사 레벨(dB)</value></data>
+<data name="LateLevel" xml:space="preserve"><value>후기 잔향 레벨</value></data>
+<data name="LateLevelDesc" xml:space="preserve"><value>후기 잔향 레벨(dB)</value></data>
+<data name="DryWetMix" xml:space="preserve"><value>드라이/웨트</value></data>
+<data name="DryWetMixDesc" xml:space="preserve"><value>원음과 이펙트의 혼합비</value></data>
+<data name="WallMaterial" xml:space="preserve"><value>벽 재질</value></data>
+<data name="WallMaterialDesc" xml:space="preserve"><value>벽 표면 재질</value></data>
+<data name="FloorMaterial" xml:space="preserve"><value>바닥 재질</value></data>
+<data name="FloorMaterialDesc" xml:space="preserve"><value>바닥 표면 재질</value></data>
+<data name="CeilingMaterial" xml:space="preserve"><value>천장 재질</value></data>
+<data name="CeilingMaterialDesc" xml:space="preserve"><value>천장 표면 재질</value></data>
+<data name="RoomShape" xml:space="preserve"><value>방 형태</value></data>
+<data name="RoomShapeDesc" xml:space="preserve"><value>방 형태 유형</value></data>
+<data name="Save" xml:space="preserve"><value>저장</value></data>
+<data name="Delete" xml:space="preserve"><value>삭제</value></data>
+<data name="Rename" xml:space="preserve"><value>이름 변경</value></data>
+<data name="Cancel" xml:space="preserve"><value>취소</value></data>
+<data name="Settings" xml:space="preserve"><value>설정</value></data>
+<data name="SelectPreset" xml:space="preserve"><value>프리셋 선택...</value></data>
+<data name="SavePresetTitle" xml:space="preserve"><value>프리셋 저장</value></data>
+<data name="EnterPresetName" xml:space="preserve"><value>프리셋 이름 입력:</value></data>
+<data name="RenamePresetTitle" xml:space="preserve"><value>프리셋 이름 변경</value></data>
+<data name="EnterNewName" xml:space="preserve"><value>새 이름 입력:</value></data>
+<data name="DeleteConfirm" xml:space="preserve"><value>프리셋 ""{0}""을(를) 삭제하시겠습니까?</value></data>
+<data name="Confirmation" xml:space="preserve"><value>확인</value></data>
+<data name="InvalidPresetName" xml:space="preserve"><value>잘못된 프리셋 이름</value></data>
+<data name="PresetExists" xml:space="preserve"><value>같은 이름의 프리셋이 이미 존재합니다</value></data>
+<data name="PresetLoadFailed" xml:space="preserve"><value>프리셋 로드 실패</value></data>
+<data name="PresetSaveFailed" xml:space="preserve"><value>프리셋 저장 실패</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>Space Audio 설정</value></data>
+<data name="None" xml:space="preserve"><value>(없음)</value></data>
+<data name="DefaultPreset" xml:space="preserve"><value>기본 프리셋</value></data>
+<data name="Quality" xml:space="preserve"><value>처리 품질</value></data>
+<data name="TabRoom" xml:space="preserve"><value>공간 설정</value></data>
+<data name="TabReverb" xml:space="preserve"><value>리버브 설정</value></data>
+<data name="TabMaterial" xml:space="preserve"><value>재질 설정</value></data>
+<data name="ResetView" xml:space="preserve"><value>뷰 초기화</value></data>
+<data name="TopView" xml:space="preserve"><value>상면도</value></data>
+<data name="FrontView" xml:space="preserve"><value>정면도</value></data>
+<data name="SideView" xml:space="preserve"><value>측면도</value></data>
+<data name="ZoomIn" xml:space="preserve"><value>확대</value></data>
+<data name="ZoomOut" xml:space="preserve"><value>축소</value></data>
+<data name="TooltipPreset" xml:space="preserve"><value>프리셋 선택 및 관리</value></data>
+<data name="TooltipSave" xml:space="preserve"><value>현재 설정을 프리셋으로 저장</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>Space Audio 설정 열기</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>좌클릭 드래그: 회전 / 우클릭 드래그: 이동 / +-버튼: 줌</value></data>
+<data name="MaterialConcrete" xml:space="preserve"><value>콘크리트</value></data>
+<data name="MaterialWood" xml:space="preserve"><value>목재</value></data>
+<data name="MaterialGlass" xml:space="preserve"><value>유리</value></data>
+<data name="MaterialCarpet" xml:space="preserve"><value>카펫</value></data>
+<data name="MaterialAcousticPanel" xml:space="preserve"><value>흡음 패널</value></data>
+<data name="MaterialBrick" xml:space="preserve"><value>벽돌</value></data>
+<data name="MaterialDrywall" xml:space="preserve"><value>석고보드</value></data>
+<data name="MaterialTile" xml:space="preserve"><value>타일</value></data>
+<data name="ShapeRectangular" xml:space="preserve"><value>직사각형</value></data>
+<data name="ShapeLShaped" xml:space="preserve"><value>L자형</value></data>
+<data name="ShapeCathedral" xml:space="preserve"><value>대성당</value></data>
+<data name="ShapeStudio" xml:space="preserve"><value>스튜디오</value></data>
+<data name="QualityEconomy" xml:space="preserve"><value>이코노미</value></data>
+<data name="QualityStandard" xml:space="preserve"><value>스탠다드</value></data>
+<data name="QualityHigh" xml:space="preserve"><value>고품질</value></data>
+</root>

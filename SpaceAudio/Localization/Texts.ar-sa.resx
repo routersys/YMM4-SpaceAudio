@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+<data name="CurrentCulture" xml:space="preserve"><value>ar-sa</value></data>
+<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
+<data name="PluginCategory" xml:space="preserve"><value>صدى</value></data>
+<data name="PluginDescription" xml:space="preserve"><value>محاكي صدى الغرفة</value></data>
+<data name="GroupRoom" xml:space="preserve"><value>غرفة</value></data>
+<data name="GroupSource" xml:space="preserve"><value>مصدر</value></data>
+<data name="GroupListener" xml:space="preserve"><value>مستمع</value></data>
+<data name="GroupReverb" xml:space="preserve"><value>صدى</value></data>
+<data name="GroupMix" xml:space="preserve"><value>مزج</value></data>
+<data name="GroupMaterial" xml:space="preserve"><value>مادة</value></data>
+<data name="GroupEditor" xml:space="preserve"><value>محرر</value></data>
+<data name="RoomWidth" xml:space="preserve"><value>عرض</value></data>
+<data name="RoomWidthDesc" xml:space="preserve"><value>عرض الغرفة بالأمتار</value></data>
+<data name="RoomHeight" xml:space="preserve"><value>ارتفاع</value></data>
+<data name="RoomHeightDesc" xml:space="preserve"><value>ارتفاع الغرفة بالأمتار</value></data>
+<data name="RoomDepth" xml:space="preserve"><value>عمق</value></data>
+<data name="RoomDepthDesc" xml:space="preserve"><value>عمق الغرفة بالأمتار</value></data>
+<data name="SourceX" xml:space="preserve"><value>إحداثي X</value></data>
+<data name="SourceY" xml:space="preserve"><value>إحداثي Y</value></data>
+<data name="SourceZ" xml:space="preserve"><value>إحداثي Z</value></data>
+<data name="SourcePosDesc" xml:space="preserve"><value>موقع المصدر</value></data>
+<data name="ListenerPosDesc" xml:space="preserve"><value>موقع المستمع</value></data>
+<data name="PreDelay" xml:space="preserve"><value>تأخير مسبق</value></data>
+<data name="PreDelayDesc" xml:space="preserve"><value>التأخير قبل الانعكاسات المبكرة</value></data>
+<data name="DecayTime" xml:space="preserve"><value>وقت الاضمحلال</value></data>
+<data name="DecayTimeDesc" xml:space="preserve"><value>وقت اضمحلال الصدى</value></data>
+<data name="HfDamping" xml:space="preserve"><value>تخميد الترددات العالية</value></data>
+<data name="HfDampingDesc" xml:space="preserve"><value>مقدار تخميد التردد العالي</value></data>
+<data name="Diffusion" xml:space="preserve"><value>انتشار</value></data>
+<data name="DiffusionDesc" xml:space="preserve"><value>مقدار انتشار الصدى</value></data>
+<data name="EarlyLevel" xml:space="preserve"><value>مستوى مبكر</value></data>
+<data name="EarlyLevelDesc" xml:space="preserve"><value>مستوى الانعكاس المبكر بالديسيبل</value></data>
+<data name="LateLevel" xml:space="preserve"><value>مستوى متأخر</value></data>
+<data name="LateLevelDesc" xml:space="preserve"><value>مستوى الصدى المتأخر بالديسيبل</value></data>
+<data name="DryWetMix" xml:space="preserve"><value>جاف/رطب</value></data>
+<data name="DryWetMixDesc" xml:space="preserve"><value>نسبة مزج الإشارة الجافة/الرطبة</value></data>
+<data name="WallMaterial" xml:space="preserve"><value>جدار</value></data>
+<data name="WallMaterialDesc" xml:space="preserve"><value>مادة سطح الجدار</value></data>
+<data name="FloorMaterial" xml:space="preserve"><value>أرضية</value></data>
+<data name="FloorMaterialDesc" xml:space="preserve"><value>مادة سطح الأرضية</value></data>
+<data name="CeilingMaterial" xml:space="preserve"><value>سقف</value></data>
+<data name="CeilingMaterialDesc" xml:space="preserve"><value>مادة سطح السقف</value></data>
+<data name="RoomShape" xml:space="preserve"><value>شكل الغرفة</value></data>
+<data name="RoomShapeDesc" xml:space="preserve"><value>نوع شكل الغرفة</value></data>
+<data name="Save" xml:space="preserve"><value>حفظ</value></data>
+<data name="Delete" xml:space="preserve"><value>حذف</value></data>
+<data name="Rename" xml:space="preserve"><value>إعادة تسمية</value></data>
+<data name="Cancel" xml:space="preserve"><value>إلغاء</value></data>
+<data name="Settings" xml:space="preserve"><value>إعدادات</value></data>
+<data name="SelectPreset" xml:space="preserve"><value>اختر إعداد مسبق...</value></data>
+<data name="SavePresetTitle" xml:space="preserve"><value>حفظ الإعداد المسبق</value></data>
+<data name="EnterPresetName" xml:space="preserve"><value>أدخل اسم الإعداد المسبق:</value></data>
+<data name="RenamePresetTitle" xml:space="preserve"><value>إعادة تسمية الإعداد المسبق</value></data>
+<data name="EnterNewName" xml:space="preserve"><value>أدخل الاسم الجديد:</value></data>
+<data name="DeleteConfirm" xml:space="preserve"><value>هل تريد حذف الإعداد المسبق ""{0}""؟</value></data>
+<data name="Confirmation" xml:space="preserve"><value>تأكيد</value></data>
+<data name="InvalidPresetName" xml:space="preserve"><value>اسم إعداد مسبق غير صالح</value></data>
+<data name="PresetExists" xml:space="preserve"><value>يوجد إعداد مسبق بهذا الاسم بالفعل</value></data>
+<data name="PresetLoadFailed" xml:space="preserve"><value>فشل تحميل الإعداد المسبق</value></data>
+<data name="PresetSaveFailed" xml:space="preserve"><value>فشل حفظ الإعداد المسبق</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>إعدادات Space Audio</value></data>
+<data name="None" xml:space="preserve"><value>(لا شيء)</value></data>
+<data name="DefaultPreset" xml:space="preserve"><value>الإعداد المسبق الافتراضي</value></data>
+<data name="Quality" xml:space="preserve"><value>جودة المعالجة</value></data>
+<data name="TabRoom" xml:space="preserve"><value>إعداد الغرفة</value></data>
+<data name="TabReverb" xml:space="preserve"><value>إعداد الصدى</value></data>
+<data name="TabMaterial" xml:space="preserve"><value>إعداد المادة</value></data>
+<data name="ResetView" xml:space="preserve"><value>إعادة تعيين العرض</value></data>
+<data name="TopView" xml:space="preserve"><value>عرض علوي</value></data>
+<data name="FrontView" xml:space="preserve"><value>عرض أمامي</value></data>
+<data name="SideView" xml:space="preserve"><value>عرض جانبي</value></data>
+<data name="ZoomIn" xml:space="preserve"><value>تكبير</value></data>
+<data name="ZoomOut" xml:space="preserve"><value>تصغير</value></data>
+<data name="TooltipPreset" xml:space="preserve"><value>اختيار وإدارة الإعدادات المسبقة</value></data>
+<data name="TooltipSave" xml:space="preserve"><value>حفظ الإعدادات الحالية كإعداد مسبق</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>فتح إعدادات Space Audio</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>سحب يسار: تدوير / سحب يمين: تحريك / أزرار +-: تكبير</value></data>
+<data name="MaterialConcrete" xml:space="preserve"><value>خرسانة</value></data>
+<data name="MaterialWood" xml:space="preserve"><value>خشب</value></data>
+<data name="MaterialGlass" xml:space="preserve"><value>زجاج</value></data>
+<data name="MaterialCarpet" xml:space="preserve"><value>سجاد</value></data>
+<data name="MaterialAcousticPanel" xml:space="preserve"><value>لوح صوتي</value></data>
+<data name="MaterialBrick" xml:space="preserve"><value>طوب</value></data>
+<data name="MaterialDrywall" xml:space="preserve"><value>جدار جاف</value></data>
+<data name="MaterialTile" xml:space="preserve"><value>بلاط</value></data>
+<data name="ShapeRectangular" xml:space="preserve"><value>مستطيل</value></data>
+<data name="ShapeLShaped" xml:space="preserve"><value>على شكل L</value></data>
+<data name="ShapeCathedral" xml:space="preserve"><value>كاتدرائية</value></data>
+<data name="ShapeStudio" xml:space="preserve"><value>استوديو</value></data>
+<data name="QualityEconomy" xml:space="preserve"><value>اقتصادي</value></data>
+<data name="QualityStandard" xml:space="preserve"><value>قياسي</value></data>
+<data name="QualityHigh" xml:space="preserve"><value>عالية</value></data>
+</root>

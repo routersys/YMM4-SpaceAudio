@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "YMM4": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\YukkuriMovieMaker_v4_Lite_Dev\\YukkuriMovieMaker.exe"
+    },
+    "YMM4 RAM": {
+      "commandName": "Executable",
+      "executablePath": "R:\\Cache\\YukkuriMovieMaker_v4_Lite\\YukkuriMovieMaker.exe"
+    }
+  }
+}

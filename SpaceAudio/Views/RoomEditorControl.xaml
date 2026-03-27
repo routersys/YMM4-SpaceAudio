@@ -1,0 +1,316 @@
+﻿<UserControl x:Class="SpaceAudio.Views.RoomEditorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:SpaceAudio.ViewModels"
+             xmlns:localization="clr-namespace:SpaceAudio.Localization"
+             xmlns:rendering="clr-namespace:SpaceAudio.Rendering"
+             xmlns:c="clr-namespace:YukkuriMovieMaker.Controls;assembly=YukkuriMovieMaker.Controls"
+             mc:Ignorable="d" Name="this"
+             Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+             Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+             d:DataContext="{d:DesignInstance Type=vm:RoomEditorViewModel}">
+    <UserControl.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="Padding" Value="10,2"/>
+        </Style>
+
+        <Style TargetType="ToggleButton" x:Key="TabBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="10,3"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <CubicEase x:Key="EaseOut" EasingMode="EaseOut"/>
+
+        <Storyboard x:Key="TitleAnimation">
+            <DoubleAnimation Storyboard.TargetName="T_S" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.1"/>
+            <DoubleAnimation Storyboard.TargetName="T_S" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.1" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_P" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.15"/>
+            <DoubleAnimation Storyboard.TargetName="T_P" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.15" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_A" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.2"/>
+            <DoubleAnimation Storyboard.TargetName="T_A" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.2" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_C" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.25"/>
+            <DoubleAnimation Storyboard.TargetName="T_C" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.25" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_E" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.3"/>
+            <DoubleAnimation Storyboard.TargetName="T_E" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.3" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_A2" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.4"/>
+            <DoubleAnimation Storyboard.TargetName="T_A2" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.4" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_U" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.45"/>
+            <DoubleAnimation Storyboard.TargetName="T_U" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.45" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_D" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.5"/>
+            <DoubleAnimation Storyboard.TargetName="T_D" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.5" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_I" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.55"/>
+            <DoubleAnimation Storyboard.TargetName="T_I" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.55" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="T_O" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.6"/>
+            <DoubleAnimation Storyboard.TargetName="T_O" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.6" EasingFunction="{StaticResource EaseOut}"/>
+        </Storyboard>
+    </UserControl.Resources>
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                BorderBrush="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                BorderThickness="0,0,0,1" Margin="0,0,0,5" Padding="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="2,0" VerticalAlignment="Center">
+                    <TextBlock Text="S" FontSize="18" FontWeight="Bold" x:Name="T_S" Opacity="0" Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="P" FontSize="18" FontWeight="Bold" x:Name="T_P" Opacity="0" Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="A" FontSize="18" FontWeight="Bold" x:Name="T_A" Opacity="0" Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="C" FontSize="18" FontWeight="Bold" x:Name="T_C" Opacity="0" Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="E" FontSize="18" FontWeight="Bold" x:Name="T_E" Opacity="0" Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text=" " FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="A" FontSize="18" FontWeight="Light" x:Name="T_A2" Opacity="0">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="U" FontSize="18" FontWeight="Light" x:Name="T_U" Opacity="0">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="D" FontSize="18" FontWeight="Light" x:Name="T_D" Opacity="0">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="I" FontSize="18" FontWeight="Light" x:Name="T_I" Opacity="0">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="O" FontSize="18" FontWeight="Light" x:Name="T_O" Opacity="0">
+                        <TextBlock.RenderTransform><TranslateTransform Y="-10"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,2,0" VerticalAlignment="Center">
+                    <Button Command="{Binding OpenUpdateUrlCommand}" Margin="0,0,5,0" Width="20" Height="20" Cursor="Hand" ToolTip="Update Available" FocusVisualStyle="{x:Null}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="Transparent">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Opacity" Value="0.8"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Opacity" Value="1.0"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Opacity" Value="1.0"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Path Fill="#4CAF50" Stretch="Uniform" Width="14" Height="14"
+                              Data="M12,2 L22,12 L17,12 L17,22 L7,22 L7,12 L2,12 Z"/>
+                    </Button>
+                    <Border BorderThickness="1" Padding="4,2">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding VersionText, FallbackValue=v0.0.0}" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" FontSize="11" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Margin="0,0,0,5" Padding="5"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="1" CornerRadius="3">
+            <Grid x:Name="HeaderGrid" SizeChanged="HeaderGrid_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ToggleButton Grid.Column="0" x:Name="PresetToggleButton" Width="180" Height="24"
+                              Content="{Binding SelectedPresetName, TargetNullValue='...', FallbackValue='...'}"
+                              IsChecked="{Binding IsPopupOpen, Mode=TwoWay}"
+                              HorizontalContentAlignment="Left" Padding="10,0"
+                              ToolTip="{x:Static localization:Texts.TooltipPreset}"
+                              PreviewMouseDown="PresetToggleButton_PreviewMouseDown"/>
+
+                <Button Grid.Column="1" x:Name="SavePresetButton" Command="{Binding SavePresetCommand}"
+                        Content="{x:Static localization:Texts.Save}" Width="50" Height="24" Margin="5,0,0,0"
+                        HorizontalAlignment="Left" ToolTip="{x:Static localization:Texts.TooltipSave}"/>
+
+                <StackPanel Grid.Column="2" x:Name="TabPanel" Orientation="Horizontal" Margin="10,0,10,0"
+                            VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <ToggleButton Style="{StaticResource TabBtn}" Content="{x:Static localization:Texts.TabRoom}"
+                                  IsChecked="{Binding IsRoomTabActive, Mode=OneWay}"
+                                  Command="{Binding SelectTabCommand}" CommandParameter="0"/>
+                    <ToggleButton Style="{StaticResource TabBtn}" Content="{x:Static localization:Texts.TabReverb}"
+                                  IsChecked="{Binding IsReverbTabActive, Mode=OneWay}"
+                                  Command="{Binding SelectTabCommand}" CommandParameter="1"/>
+                    <ToggleButton Style="{StaticResource TabBtn}" Content="{x:Static localization:Texts.TabMaterial}"
+                                  IsChecked="{Binding IsMaterialTabActive, Mode=OneWay}"
+                                  Command="{Binding SelectTabCommand}" CommandParameter="2"/>
+                </StackPanel>
+
+                <Button Grid.Column="3" x:Name="SettingsButton" Click="Settings_Click"
+                        Width="24" Height="24" Padding="0" ToolTip="{x:Static localization:Texts.TooltipSettings}">
+                    <Path Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Stretch="Uniform" Margin="4"
+                          Data="M19.43,12.98C19.47,12.66 19.5,12.34 19.5,12S19.47,11.34 19.43,11.02L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.02C4.53,11.34 4.5,11.67 4.5,12S4.53,12.66 4.57,12.98L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.04 4.95,18.95L7.44,17.95C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.98M12,15.5C10.07,15.5 8.5,13.93 8.5,12C8.5,10.07 10.07,8.5 12,8.5C13.93,8.5 15.5,10.07 15.5,12C15.5,13.93 13.93,15.5 12,15.5Z"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Popup x:Name="PresetPopup" IsOpen="{Binding IsChecked, ElementName=PresetToggleButton, Mode=TwoWay}"
+               StaysOpen="False" Placement="Bottom" PlacementTarget="{Binding ElementName=PresetToggleButton}"
+               Width="280" Height="260" AllowsTransparency="True" PopupAnimation="Slide">
+            <Border Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                    BorderThickness="1" CornerRadius="3">
+                <ListBox ItemsSource="{Binding Presets}" Background="Transparent" BorderThickness="0"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                        <MenuItem Header="{x:Static localization:Texts.Rename}"
+                                                  Command="{Binding RenamePresetCommand}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <MenuItem Header="{x:Static localization:Texts.Delete}"
+                                                  Command="{Binding DeletePresetCommand}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4" Background="Transparent">
+                                <Grid.InputBindings>
+                                    <MouseBinding Gesture="LeftDoubleClick"
+                                                  Command="{Binding DataContext.LoadPresetCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Grid.InputBindings>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Margin="6,2"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Popup>
+
+        <Grid Grid.Row="2" Name="EditorGrid" Height="{Binding EditorHeight}" Margin="0,0,0,5">
+            <Border x:Name="CanvasBorder"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                    BorderThickness="1"
+                    Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                    CornerRadius="2" ClipToBounds="True"
+                    ToolTip="{x:Static localization:Texts.Tooltip3DView}">
+                <Grid>
+                    <rendering:RoomVisualHost x:Name="VisualHost"/>
+                    <Canvas x:Name="InteractionCanvas" Background="Transparent"
+                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                            MouseMove="Canvas_MouseMove"
+                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
+                            MouseRightButtonDown="Canvas_MouseRightButtonDown"
+                            MouseRightButtonUp="Canvas_MouseRightButtonUp"
+                            MouseWheel="Canvas_MouseWheel"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="3">
+                        <Button x:Name="BtnZoomIn" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Click="ZoomIn_Click" ToolTip="{x:Static localization:Texts.ZoomIn}" Margin="0,0,1,0">
+                            <Path Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Stretch="Uniform" Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                        </Button>
+                        <Button x:Name="BtnZoomOut" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Click="ZoomOut_Click" ToolTip="{x:Static localization:Texts.ZoomOut}" Margin="0,0,3,0">
+                            <Path Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Stretch="Uniform" Data="M19,13H5V11H19V13Z"/>
+                        </Button>
+                        <Button x:Name="BtnTopView" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Content="T" Click="TopView_Click" ToolTip="{x:Static localization:Texts.TopView}" Margin="0,0,1,0"/>
+                        <Button x:Name="BtnFrontView" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Content="F" Click="FrontView_Click" ToolTip="{x:Static localization:Texts.FrontView}" Margin="0,0,1,0"/>
+                        <Button x:Name="BtnSideView" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Content="S" Click="SideView_Click" ToolTip="{x:Static localization:Texts.SideView}" Margin="0,0,1,0"/>
+                        <Button x:Name="BtnResetView" Height="20" Width="22" FontSize="10" Padding="4,1" MinWidth="22" VerticalAlignment="Center" Content="R" Click="ResetView_Click" ToolTip="{x:Static localization:Texts.ResetView}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Thumb Name="ResizeThumb" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                   Width="16" Height="16" Cursor="SizeNWSE"
+                   DragDelta="ResizeThumb_DragDelta">
+                <Thumb.Template>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Background="Transparent">
+                            <Path Data="M 12,12 L 16,16 M 8,16 L 16,8 M 4,16 L 16,4"
+                                  Stroke="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                  StrokeThickness="1" Margin="2"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+        </Grid>
+
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0">
+            <c:PropertiesEditor Target="{Binding SelectedTarget}"
+                                BeginEdit="PropertiesEditor_BeginEdit" EndEdit="PropertiesEditor_EndEdit"/>
+        </ScrollViewer>
+
+    </Grid>
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <BeginStoryboard Storyboard="{StaticResource TitleAnimation}"/>
+        </EventTrigger>
+    </UserControl.Triggers>
+</UserControl>
