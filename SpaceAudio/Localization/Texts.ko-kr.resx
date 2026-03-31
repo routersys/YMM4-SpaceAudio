@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>ko-kr</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>리버브</value></data>
+<data name="PluginName" xml:space="preserve"><value>스페이스 오디오</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>룸 리버브 시뮬레이터</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>방</value></data>
 <data name="GroupSource" xml:space="preserve"><value>음원</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>같은 이름의 프리셋이 이미 존재합니다</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>프리셋 로드 실패</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>프리셋 저장 실패</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>Space Audio 설정</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>스페이스 오디오 설정</value></data>
 <data name="None" xml:space="preserve"><value>(없음)</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>기본 프리셋</value></data>
 <data name="Quality" xml:space="preserve"><value>처리 품질</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>축소</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>프리셋 선택 및 관리</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>현재 설정을 프리셋으로 저장</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>Space Audio 설정 열기</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>스페이스 오디오 설정 열기</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>좌클릭 드래그: 회전 / 우클릭 드래그: 이동 / +-버튼: 줌</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>콘크리트</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>목재</value></data>

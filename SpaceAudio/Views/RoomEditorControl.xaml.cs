@@ -286,6 +286,11 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
 
     private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != ModifierKeys.None)
+        {
+            return;
+        }
+
         _camera.ZoomByDelta(e.Delta);
         _needsRedraw = true;
         e.Handled = true;
@@ -423,5 +428,16 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
     {
         base.OnRenderSizeChanged(sizeInfo);
         _needsRedraw = true;
+    }
+
+    private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender
+        };
+        RaiseEvent(eventArg);
     }
 }

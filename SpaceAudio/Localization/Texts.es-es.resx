@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>es-es</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>Reverberación</value></data>
+<data name="PluginName" xml:space="preserve"><value>Audio Espacial</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>Simulador de reverberación</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>Sala</value></data>
 <data name="GroupSource" xml:space="preserve"><value>Fuente</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>Ya existe un preset con este nombre</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>Error al cargar el preset</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>Error al guardar el preset</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>Configuración de Space Audio</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>Configuración de Audio Espacial</value></data>
 <data name="None" xml:space="preserve"><value>(Ninguno)</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>Preset predeterminado</value></data>
 <data name="Quality" xml:space="preserve"><value>Calidad de procesamiento</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>Alejar</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>Seleccionar y gestionar presets</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>Guardar configuración actual como preset</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>Abrir configuración de Space Audio</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>Abrir configuración de Audio Espacial</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>Arrastrar izq: Rotar / Arrastrar der: Mover / Botones +-: Zoom</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>Concreto</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>Madera</value></data>

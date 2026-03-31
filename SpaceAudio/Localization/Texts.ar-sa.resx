@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>ar-sa</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>صدى</value></data>
+<data name="PluginName" xml:space="preserve"><value>الصوت المكاني</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>محاكي صدى الغرفة</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>غرفة</value></data>
 <data name="GroupSource" xml:space="preserve"><value>مصدر</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>يوجد إعداد مسبق بهذا الاسم بالفعل</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>فشل تحميل الإعداد المسبق</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>فشل حفظ الإعداد المسبق</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>إعدادات Space Audio</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>إعدادات الصوت المكاني</value></data>
 <data name="None" xml:space="preserve"><value>(لا شيء)</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>الإعداد المسبق الافتراضي</value></data>
 <data name="Quality" xml:space="preserve"><value>جودة المعالجة</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>تصغير</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>اختيار وإدارة الإعدادات المسبقة</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>حفظ الإعدادات الحالية كإعداد مسبق</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>فتح إعدادات Space Audio</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>فتح إعدادات الصوت المكاني</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>سحب يسار: تدوير / سحب يمين: تحريك / أزرار +-: تكبير</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>خرسانة</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>خشب</value></data>

@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>id-id</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>Reverb</value></data>
+<data name="PluginName" xml:space="preserve"><value>Audio Spasial</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>Simulator Reverb Ruangan</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>Ruangan</value></data>
 <data name="GroupSource" xml:space="preserve"><value>Sumber</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>Preset dengan nama ini sudah ada</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>Gagal memuat preset</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>Gagal menyimpan preset</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>Pengaturan Space Audio</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>Pengaturan Audio Spasial</value></data>
 <data name="None" xml:space="preserve"><value>(Tidak Ada)</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>Preset Default</value></data>
 <data name="Quality" xml:space="preserve"><value>Kualitas Pemrosesan</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>Perkecil</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>Pilih dan kelola preset</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>Simpan pengaturan saat ini sebagai preset</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>Buka pengaturan Space Audio</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>Buka pengaturan Audio Spasial</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>Seret kiri: Putar / Seret kanan: Geser / Tombol +-: Zoom</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>Beton</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>Kayu</value></data>

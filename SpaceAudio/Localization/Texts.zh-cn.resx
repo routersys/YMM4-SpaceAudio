@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>zh-cn</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>混响</value></data>
+<data name="PluginName" xml:space="preserve"><value>空间音频</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>房间混响模拟器</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>房间</value></data>
 <data name="GroupSource" xml:space="preserve"><value>音源</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>同名预设已存在</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>预设加载失败</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>预设保存失败</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>Space Audio 设置</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>空间音频设置</value></data>
 <data name="None" xml:space="preserve"><value>(无)</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>默认预设</value></data>
 <data name="Quality" xml:space="preserve"><value>处理质量</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>缩小</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>选择和管理预设</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>将当前设置保存为预设</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>打开 Space Audio 设置</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>打开空间音频设置</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>左键拖动：旋转 / 右键拖动：平移 / +-按钮：缩放</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>混凝土</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>木材</value></data>

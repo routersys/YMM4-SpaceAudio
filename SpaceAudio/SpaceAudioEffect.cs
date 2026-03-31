@@ -8,11 +8,14 @@ using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Player.Audio.Effects;
+using YukkuriMovieMaker.Plugin;
 using YukkuriMovieMaker.Plugin.Effects;
 
 namespace SpaceAudio;
 
-[AudioEffect(nameof(Texts.PluginName), [nameof(Texts.PluginCategory)], [nameof(Texts.PluginDescription)], ResourceType = typeof(Texts), IsAviUtlSupported = false)]
+[PluginDetails(AuthorName = "routersys", ContentId = "nc470045")]
+
+[AudioEffect(nameof(Texts.PluginName), [AudioEffectCategories.Effect], [nameof(Texts.PluginDescription)], ResourceType = typeof(Texts), IsAviUtlSupported = false)]
 public sealed class SpaceAudioEffect : AudioEffectBase
 {
     public override string Label => BuildLabel();
@@ -128,7 +131,7 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         var w = RoomWidth.Values[0].Value;
         var h = RoomHeight.Values[0].Value;
         var d = RoomDepth.Values[0].Value;
-        return $"SPACE AUDIO - {w:F0}x{h:F0}x{d:F0}m RT60:{DecayTime.Values[0].Value:F1}s";
+        return $"{Texts.PluginName} - {w:F0}x{h:F0}x{d:F0}m RT60:{DecayTime.Values[0].Value:F1}s";
     }
 
     public sealed class RoomParameters(SpaceAudioEffect parent)

@@ -59,8 +59,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 <data name="CurrentCulture" xml:space="preserve"><value>ja-jp</value></data>
-<data name="PluginName" xml:space="preserve"><value>SPACE AUDIO</value></data>
-<data name="PluginCategory" xml:space="preserve"><value>リバーブ</value></data>
+<data name="PluginName" xml:space="preserve"><value>スペースオーディオ</value></data>
 <data name="PluginDescription" xml:space="preserve"><value>ルームリバーブシミュレーター</value></data>
 <data name="GroupRoom" xml:space="preserve"><value>部屋</value></data>
 <data name="GroupSource" xml:space="preserve"><value>音源</value></data>
@@ -118,7 +117,7 @@
 <data name="PresetExists" xml:space="preserve"><value>同名のプリセットが既に存在します</value></data>
 <data name="PresetLoadFailed" xml:space="preserve"><value>プリセットの読み込みに失敗しました</value></data>
 <data name="PresetSaveFailed" xml:space="preserve"><value>プリセットの保存に失敗しました</value></data>
-<data name="SettingsTitle" xml:space="preserve"><value>Space Audio 設定</value></data>
+<data name="SettingsTitle" xml:space="preserve"><value>スペースオーディオ設定</value></data>
 <data name="None" xml:space="preserve"><value>（なし）</value></data>
 <data name="DefaultPreset" xml:space="preserve"><value>デフォルトプリセット</value></data>
 <data name="Quality" xml:space="preserve"><value>処理品質</value></data>
@@ -133,7 +132,7 @@
 <data name="ZoomOut" xml:space="preserve"><value>縮小</value></data>
 <data name="TooltipPreset" xml:space="preserve"><value>プリセットの選択と管理</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>現在の設定をプリセットとして保存</value></data>
-<data name="TooltipSettings" xml:space="preserve"><value>Space Audio の設定を開く</value></data>
+<data name="TooltipSettings" xml:space="preserve"><value>スペースオーディオの設定を開く</value></data>
 <data name="Tooltip3DView" xml:space="preserve"><value>左ドラッグ: 回転 / 右ドラッグ: 移動 / +−ボタン: ズーム</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>コンクリート</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>木材</value></data>
