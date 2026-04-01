@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>Eliminar</value></data>
 <data name="Rename" xml:space="preserve"><value>Renombrar</value></data>
 <data name="Cancel" xml:space="preserve"><value>Cancelar</value></data>
+<data name="Apply" xml:space="preserve"><value>Aplicar</value></data>
 <data name="Settings" xml:space="preserve"><value>Configuración</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>Seleccionar Preset...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>Guardar Preset</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>Seleccionar y gestionar presets</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>Guardar configuración actual como preset</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>Abrir configuración de Audio Espacial</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>Arrastrar izq: Rotar / Arrastrar der: Mover / Botones +-: Zoom</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>Arrastrar izq: Rotar / Arrastrar der: Mover / Botones +-: Zoom / Clic der: Menú</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>Concreto</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>Madera</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>Vidrio</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>Forma de L</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>Catedral</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>Estudio</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>Personalizado</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>Económico</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>Estándar</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>Alta</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>Editor de forma de sala</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>Gestor de materiales</value></data>
+<data name="VerticesList" xml:space="preserve"><value>Vértices</value></data>
+<data name="FacesList" xml:space="preserve"><value>Caras</value></data>
+<data name="AddVertex" xml:space="preserve"><value>Añadir vértice</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>Quitar vértice</value></data>
+<data name="AddFace" xml:space="preserve"><value>Añadir cara</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>Quitar cara</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>Guardar geometría</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>Guardar geometría</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>Nombre de la geometría:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>Editar forma de sala...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>Gestionar materiales...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>Cargar geometría</value></data>
+<data name="ResetSource" xml:space="preserve"><value>Restablecer posición de fuente</value></data>
+<data name="ResetListener" xml:space="preserve"><value>Restablecer posición de oyente</value></data>
+<data name="CenterSource" xml:space="preserve"><value>Centrar fuente</value></data>
+<data name="CenterListener" xml:space="preserve"><value>Centrar oyente</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>Intercambiar fuente/oyente</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>Opciones de vista</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>Materiales</value></data>
+<data name="MaterialName" xml:space="preserve"><value>Nombre</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>Absorción</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>Añadir material</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>Actualizar</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>¿Eliminar material ""{0}""?</value></data>
 </root>

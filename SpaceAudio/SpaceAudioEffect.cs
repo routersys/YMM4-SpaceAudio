@@ -58,6 +58,13 @@ public sealed class SpaceAudioEffect : AudioEffectBase
     public WallMaterial CeilingMaterialValue { get => _ceilingMaterial; set => Set(ref _ceilingMaterial, value); }
     private WallMaterial _ceilingMaterial = WallMaterial.Drywall;
 
+    public string CustomGeometryId { get => _customGeometryId; set => Set(ref _customGeometryId, value); }
+    private string _customGeometryId = "";
+
+    [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+    public RoomGeometry? CustomGeometry { get => _customGeometry; set => Set(ref _customGeometry, value); }
+    private RoomGeometry? _customGeometry;
+
     public float RoomWidthValue { get => (float)RoomWidth.Values[0].Value; set => RoomWidth.Values[0].Value = value; }
     public float RoomHeightValue { get => (float)RoomHeight.Values[0].Value; set => RoomHeight.Values[0].Value = value; }
     public float RoomDepthValue { get => (float)RoomDepth.Values[0].Value; set => RoomDepth.Values[0].Value = value; }
@@ -81,11 +88,34 @@ public sealed class SpaceAudioEffect : AudioEffectBase
     public ReverbParameters GetReverbParameters() => new(this);
     public MaterialParameters GetMaterialParameters() => new(this);
 
+    public RoomGeometry? ResolveGeometry()
+    {
+        if (_roomShape == RoomShape.Custom)
+        {
+            if (_customGeometry is not null) return _customGeometry;
+            if (!string.IsNullOrEmpty(_customGeometryId))
+            {
+                var loaded = Services.ServiceLocator.GeometryService.Load(_customGeometryId);
+                if (loaded is not null) return loaded;
+            }
+        }
+        return null;
+    }
+
     public RoomSnapshot CreateSnapshot(long frame, long totalFrames, int hz)
     {
         float w = (float)RoomWidth.GetValue(frame, totalFrames, hz);
         float h = (float)RoomHeight.GetValue(frame, totalFrames, hz);
         float d = (float)RoomDepth.GetValue(frame, totalFrames, hz);
+
+        var geometry = ResolveGeometry();
+        if (geometry is null && _roomShape != RoomShape.Rectangular)
+        {
+            geometry = RoomGeometry.FromShape(_roomShape, w, h, d,
+                MaterialCoefficients.GetAbsorption(_wallMaterial),
+                MaterialCoefficients.GetAbsorption(_floorMaterial),
+                MaterialCoefficients.GetAbsorption(_ceilingMaterial));
+        }
 
         return new RoomSnapshot(
             w, h, d,
@@ -109,7 +139,8 @@ public sealed class SpaceAudioEffect : AudioEffectBase
             _roomShape,
             _wallMaterial,
             _floorMaterial,
-            _ceilingMaterial);
+            _ceilingMaterial,
+            geometry);
     }
 
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>

@@ -1,4 +1,5 @@
-﻿using SpaceAudio.Infrastructure;
+﻿using SpaceAudio.Enums;
+using SpaceAudio.Infrastructure;
 using SpaceAudio.Interfaces;
 using SpaceAudio.Localization;
 using SpaceAudio.Models;
@@ -13,10 +14,11 @@ namespace SpaceAudio.ViewModels;
 
 public sealed class RoomEditorViewModel : ViewModelBase
 {
-
     private readonly IPresetService _presetService;
     private readonly IUserNotificationService _notifications;
     private readonly IUpdateService _updateService;
+    private readonly IRoomGeometryService _geometryService;
+    private readonly IMaterialService _materialService;
 
     private SpaceAudioEffect? _effect;
     private SpaceAudioEffect.RoomParameters? _roomParameters;
@@ -34,6 +36,8 @@ public sealed class RoomEditorViewModel : ViewModelBase
     public event EventHandler? RequestRedraw;
     public event EventHandler? BeginEdit;
     public event EventHandler? EndEdit;
+    public event EventHandler? RequestOpenShapeEditor;
+    public event EventHandler? RequestOpenMaterialManager;
 
     public SpaceAudioEffect? Effect
     {
@@ -128,14 +132,35 @@ public sealed class RoomEditorViewModel : ViewModelBase
     public ICommand RenamePresetCommand { get; }
     public ICommand SelectTabCommand { get; }
     public ICommand OpenUpdateUrlCommand { get; }
+    public ICommand EditShapeCommand { get; }
+    public ICommand ManageMaterialsCommand { get; }
+    public ICommand ResetSourceCommand { get; }
+    public ICommand ResetListenerCommand { get; }
+    public ICommand CenterSourceCommand { get; }
+    public ICommand CenterListenerCommand { get; }
+    public ICommand SwapPositionsCommand { get; }
+    public ICommand LoadGeometryCommand { get; }
 
-    public RoomEditorViewModel() : this(ServiceLocator.PresetService, ServiceLocator.NotificationService, ServiceLocator.UpdateService) { }
+    public RoomEditorViewModel() : this(
+        ServiceLocator.PresetService,
+        ServiceLocator.NotificationService,
+        ServiceLocator.UpdateService,
+        ServiceLocator.GeometryService,
+        ServiceLocator.MaterialService)
+    { }
 
-    public RoomEditorViewModel(IPresetService presetService, IUserNotificationService notifications, IUpdateService updateService)
+    public RoomEditorViewModel(
+        IPresetService presetService,
+        IUserNotificationService notifications,
+        IUpdateService updateService,
+        IRoomGeometryService geometryService,
+        IMaterialService materialService)
     {
         _presetService = presetService;
         _notifications = notifications;
         _updateService = updateService;
+        _geometryService = geometryService;
+        _materialService = materialService;
         _presetService.PresetsChanged += (_, _) => LoadPresets();
 
         SavePresetCommand = new AsyncRelayCommand(_ => SavePresetAsync());
@@ -146,10 +171,77 @@ public sealed class RoomEditorViewModel : ViewModelBase
         OpenUpdateUrlCommand = new RelayCommand(_ =>
         {
             if (!string.IsNullOrWhiteSpace(UpdateUrl))
-            {
                 Process.Start(new ProcessStartInfo { FileName = UpdateUrl, UseShellExecute = true });
-            }
         });
+
+        EditShapeCommand = new RelayCommand(_ => RequestOpenShapeEditor?.Invoke(this, EventArgs.Empty));
+        ManageMaterialsCommand = new RelayCommand(_ => RequestOpenMaterialManager?.Invoke(this, EventArgs.Empty));
+
+        ResetSourceCommand = new RelayCommand(_ =>
+        {
+            if (_effect is null) return;
+            using (CreateEditScope())
+            {
+                _effect.SourceXValue = 2.0f;
+                _effect.SourceYValue = 1.5f;
+                _effect.SourceZValue = 3.0f;
+            }
+            NotifyRedraw();
+        });
+
+        ResetListenerCommand = new RelayCommand(_ =>
+        {
+            if (_effect is null) return;
+            using (CreateEditScope())
+            {
+                _effect.ListenerXValue = 6.0f;
+                _effect.ListenerYValue = 1.5f;
+                _effect.ListenerZValue = 3.0f;
+            }
+            NotifyRedraw();
+        });
+
+        CenterSourceCommand = new RelayCommand(_ =>
+        {
+            if (_effect is null) return;
+            using (CreateEditScope())
+            {
+                _effect.SourceXValue = _effect.RoomWidthValue * 0.25f;
+                _effect.SourceYValue = _effect.RoomHeightValue * 0.5f;
+                _effect.SourceZValue = _effect.RoomDepthValue * 0.5f;
+            }
+            NotifyRedraw();
+        });
+
+        CenterListenerCommand = new RelayCommand(_ =>
+        {
+            if (_effect is null) return;
+            using (CreateEditScope())
+            {
+                _effect.ListenerXValue = _effect.RoomWidthValue * 0.75f;
+                _effect.ListenerYValue = _effect.RoomHeightValue * 0.5f;
+                _effect.ListenerZValue = _effect.RoomDepthValue * 0.5f;
+            }
+            NotifyRedraw();
+        });
+
+        SwapPositionsCommand = new RelayCommand(_ =>
+        {
+            if (_effect is null) return;
+            using (CreateEditScope())
+            {
+                (float sx, float sy, float sz) = (_effect.SourceXValue, _effect.SourceYValue, _effect.SourceZValue);
+                _effect.SourceXValue = _effect.ListenerXValue;
+                _effect.SourceYValue = _effect.ListenerYValue;
+                _effect.SourceZValue = _effect.ListenerZValue;
+                _effect.ListenerXValue = sx;
+                _effect.ListenerYValue = sy;
+                _effect.ListenerZValue = sz;
+            }
+            NotifyRedraw();
+        });
+
+        LoadGeometryCommand = new RelayCommand(LoadGeometry);
 
         LoadPresets();
         _ = CheckForUpdatesAsync();
@@ -191,8 +283,22 @@ public sealed class RoomEditorViewModel : ViewModelBase
             Diffusion = _effect.DiffusionValue,
             EarlyLevel = _effect.EarlyLevelValue,
             LateLevel = _effect.LateLevelValue,
-            DryWetMix = _effect.DryWetMixValue
+            DryWetMix = _effect.DryWetMixValue,
+            CustomGeometryId = _effect.CustomGeometryId,
+            EmbeddedGeometry = _effect.CustomGeometry?.Clone()
         };
+    }
+
+    public void ApplyGeometry(RoomGeometry geometry)
+    {
+        if (_effect is null) return;
+        using (CreateEditScope())
+        {
+            _effect.RoomShapeValue = RoomShape.Custom;
+            _effect.CustomGeometry = geometry;
+            _effect.CustomGeometryId = geometry.ShapeId;
+        }
+        NotifyRedraw();
     }
 
     public void SelectSourceTarget() => SelectedTarget = _sourceParameters;
@@ -230,6 +336,14 @@ public sealed class RoomEditorViewModel : ViewModelBase
         NotifyRedraw();
     }
 
+    private void LoadGeometry(object? parameter)
+    {
+        if (parameter is not string id || _effect is null) return;
+        var geo = _geometryService.Load(id);
+        if (geo is null) return;
+        ApplyGeometry(geo);
+    }
+
     private void ApplyConfiguration(RoomConfiguration config)
     {
         if (_effect is null) return;
@@ -253,6 +367,8 @@ public sealed class RoomEditorViewModel : ViewModelBase
         _effect.FloorMaterialValue = config.FloorMaterial;
         _effect.CeilingMaterialValue = config.CeilingMaterial;
         _effect.RoomShapeValue = config.Shape;
+        _effect.CustomGeometryId = config.CustomGeometryId;
+        _effect.CustomGeometry = config.EmbeddedGeometry?.Clone();
     }
 
     private async Task SavePresetAsync()

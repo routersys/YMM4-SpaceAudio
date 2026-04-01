@@ -15,5 +15,8 @@ public enum RoomShape
     Cathedral,
 
     [Display(Name = nameof(Texts.ShapeStudio), ResourceType = typeof(Texts))]
-    Studio
+    Studio,
+
+    [Display(Name = nameof(Texts.ShapeCustom), ResourceType = typeof(Texts))]
+    Custom
 }

@@ -15,12 +15,12 @@ internal static class ImpulseResponseExporter
 
         using var preDelayL = new DelayLine(maxPreDelay);
         using var preDelayR = new DelayLine(maxPreDelay);
-        using var early = new EarlyReflectionEngine(maxEarlyDelay);
+        using var geoEngine = new GeometricReflectionEngine(maxEarlyDelay);
         using var fdn = new FeedbackDelayNetwork(sampleRate);
         using var hfL = new LowPassOnePoleCascade(0.4f);
         using var hfR = new LowPassOnePoleCascade(0.4f);
 
-        early.Configure(in snapshot, sampleRate);
+        geoEngine.Configure(snapshot.Geometry, in snapshot, sampleRate);
         fdn.Configure(in snapshot, sampleRate);
 
         float earlyGain = MathF.Pow(10.0f, snapshot.EarlyLevel / 20.0f);
@@ -34,7 +34,7 @@ internal static class ImpulseResponseExporter
             float delayedL = preDelayL.Process(impulse, preDelaySamples);
             float delayedR = preDelayR.Process(impulse, preDelaySamples);
 
-            early.Process(delayedL, delayedR, out float earlyL, out float earlyR);
+            geoEngine.Process(delayedL, delayedR, out float earlyL, out float earlyR);
             fdn.Process(delayedL, delayedR, out float lateL, out float lateR);
 
             lateL = hfL.Process(lateL);

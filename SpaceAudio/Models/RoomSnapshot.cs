@@ -1,4 +1,4 @@
-using SpaceAudio.Enums;
+﻿using SpaceAudio.Enums;
 
 namespace SpaceAudio.Models;
 
@@ -26,5 +26,6 @@ public readonly record struct RoomSnapshot(
     RoomShape Shape,
     WallMaterial WallMat,
     WallMaterial FloorMat,
-    WallMaterial CeilMat
+    WallMaterial CeilMat,
+    RoomGeometry? Geometry = null
 );

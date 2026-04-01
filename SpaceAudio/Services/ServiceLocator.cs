@@ -22,6 +22,12 @@ public static class ServiceLocator
     private static readonly Lazy<IUpdateService> LazyUpdate =
         new(() => new UpdateService());
 
+    private static readonly Lazy<IRoomGeometryService> LazyGeometry =
+        new(() => new RoomGeometryService(LazyNotification.Value));
+
+    private static readonly Lazy<IMaterialService> LazyMaterial =
+        new(() => new MaterialService(LazyNotification.Value));
+
     public static void RegisterToastPresenter(IToastPresenter presenter)
     {
         ArgumentNullException.ThrowIfNull(presenter);
@@ -34,4 +40,6 @@ public static class ServiceLocator
     public static IWindowThemeService WindowThemeService => LazyTheme.Value;
     public static IResourceTracker ResourceTracker => LazyTracker.Value;
     public static IUpdateService UpdateService => LazyUpdate.Value;
+    public static IRoomGeometryService GeometryService => LazyGeometry.Value;
+    public static IMaterialService MaterialService => LazyMaterial.Value;
 }

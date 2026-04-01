@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>刪除</value></data>
 <data name="Rename" xml:space="preserve"><value>重新命名</value></data>
 <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+<data name="Apply" xml:space="preserve"><value>套用</value></data>
 <data name="Settings" xml:space="preserve"><value>設定</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>選擇預設...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>儲存預設</value></data>
@@ -125,7 +126,7 @@
 <data name="TabReverb" xml:space="preserve"><value>混響設定</value></data>
 <data name="TabMaterial" xml:space="preserve"><value>材質設定</value></data>
 <data name="ResetView" xml:space="preserve"><value>重置視圖</value></data>
-<data name="TopView" xml:space="preserve"><value>俯視圖</value></data>
+<data name="TopView" xml:space="preserve"><value>俶視圖</value></data>
 <data name="FrontView" xml:space="preserve"><value>正面圖</value></data>
 <data name="SideView" xml:space="preserve"><value>側面圖</value></data>
 <data name="ZoomIn" xml:space="preserve"><value>放大</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>選擇和管理預設</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>將當前設定儲存為預設</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>開啟空間音訊設定</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>左鍵拖動：旋轉 / 右鍵拖動：平移 / +-按鈕：縮放</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>左鍵拖動：旋轉 / 右鍵拖動：平移 / +-按鈕：縮放 / 右鍵單擊：選單</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>混凝土</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>木材</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>玻璃</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>L形</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>大教堂</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>錄音室</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>自訂</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>經濟</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>標準</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>高品質</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>房間形狀編輯器</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>材質管理</value></data>
+<data name="VerticesList" xml:space="preserve"><value>頂點列表</value></data>
+<data name="FacesList" xml:space="preserve"><value>面列表</value></data>
+<data name="AddVertex" xml:space="preserve"><value>新增頂點</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>刪除頂點</value></data>
+<data name="AddFace" xml:space="preserve"><value>新增面</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>刪除面</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>儲存幾何體</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>儲存幾何體</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>輸入幾何體名稱:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>編輯房間形狀...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>管理材質...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>載入幾何體</value></data>
+<data name="ResetSource" xml:space="preserve"><value>重置音源位置</value></data>
+<data name="ResetListener" xml:space="preserve"><value>重置聽者位置</value></data>
+<data name="CenterSource" xml:space="preserve"><value>居中音源</value></data>
+<data name="CenterListener" xml:space="preserve"><value>居中聽者</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>交換音源和聽者</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>視圖選項</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>材質列表</value></data>
+<data name="MaterialName" xml:space="preserve"><value>名稱</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>吸收率</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>新增材質</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>更新</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>確定刪除材質「{0}」？</value></data>
 </root>

@@ -1,0 +1,134 @@
+﻿<Window x:Class="SpaceAudio.Views.RoomShapeEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SpaceAudio.ViewModels"
+        xmlns:localization="clr-namespace:SpaceAudio.Localization"
+        xmlns:rendering="clr-namespace:SpaceAudio.Rendering"
+        d:DataContext="{d:DesignInstance Type=vm:RoomShapeEditorViewModel}"
+        mc:Ignorable="d"
+        Title="{x:Static localization:Texts.ShapeEditorTitle}"
+        Height="620" Width="900" MinHeight="500" MinWidth="700"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+    <Window.Resources>
+        <Style TargetType="Button" x:Key="EditorBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" SnapsToDevicePixels="True">
+                            <ContentPresenter Focusable="False" HorizontalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBox" x:Key="CoordBox">
+            <Setter Property="Width" Value="70"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300"/>
+            <ColumnDefinition Width="280"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="1" CornerRadius="3" ClipToBounds="True" Margin="0,0,8,0"
+                Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+            <Grid>
+                <rendering:RoomVisualHost x:Name="PreviewHost"/>
+                <Canvas x:Name="PreviewCanvas" Background="Transparent"
+                        MouseLeftButtonDown="Preview_MouseLeftButtonDown"
+                        MouseMove="Preview_MouseMove"
+                        MouseLeftButtonUp="Preview_MouseLeftButtonUp"
+                        MouseRightButtonDown="Preview_MouseRightButtonDown"
+                        MouseRightButtonUp="Preview_MouseRightButtonUp"
+                        MouseWheel="Preview_MouseWheel"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{x:Static localization:Texts.VerticesList}" FontWeight="Bold" Margin="0,0,0,4"/>
+            <ListBox Grid.Row="1" ItemsSource="{Binding Vertices}" SelectedIndex="{Binding SelectedVertexIndex}"
+                     Background="Transparent" BorderThickness="1"
+                     BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+
+            <StackPanel Grid.Row="2" Margin="0,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="X" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBox Grid.Column="1" Text="{Binding VertexX, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
+                    <TextBlock Grid.Column="2" Text="Y" VerticalAlignment="Center" Margin="4,0,4,0"/>
+                    <TextBox Grid.Column="3" Text="{Binding VertexY, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
+                    <TextBlock Grid.Column="4" Text="Z" VerticalAlignment="Center" Margin="4,0,4,0"/>
+                    <TextBox Grid.Column="5" Text="{Binding VertexZ, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <Button Content="{x:Static localization:Texts.AddVertex}" Command="{Binding AddVertexCommand}" Style="{StaticResource EditorBtn}"/>
+                    <Button Content="{x:Static localization:Texts.RemoveVertex}" Command="{Binding RemoveVertexCommand}" Style="{StaticResource EditorBtn}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Grid.Row="3" Text="{x:Static localization:Texts.FacesList}" FontWeight="Bold" Margin="0,0,0,4" VerticalAlignment="Top"/>
+            <ListBox Grid.Row="3" ItemsSource="{Binding FaceItems}" SelectedIndex="{Binding SelectedFaceIndex}"
+                     Margin="0,20,0,0" Background="Transparent" BorderThickness="1"
+                     BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+
+            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
+                <Button Content="{x:Static localization:Texts.AddFace}" Command="{Binding AddFaceCommand}" Style="{StaticResource EditorBtn}"/>
+                <Button Content="{x:Static localization:Texts.RemoveFace}" Command="{Binding RemoveFaceCommand}" Style="{StaticResource EditorBtn}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="{x:Static localization:Texts.SaveGeometry}" Command="{Binding SaveGeometryCommand}" Style="{StaticResource EditorBtn}" MinWidth="80"/>
+                <Button Content="{x:Static localization:Texts.Apply}" Command="{Binding ApplyCommand}" Style="{StaticResource EditorBtn}" MinWidth="80"/>
+                <Button Content="{x:Static localization:Texts.Cancel}" IsCancel="True" Style="{StaticResource EditorBtn}" MinWidth="80"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

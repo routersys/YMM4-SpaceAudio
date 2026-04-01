@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>Hapus</value></data>
 <data name="Rename" xml:space="preserve"><value>Ganti Nama</value></data>
 <data name="Cancel" xml:space="preserve"><value>Batal</value></data>
+<data name="Apply" xml:space="preserve"><value>Terapkan</value></data>
 <data name="Settings" xml:space="preserve"><value>Pengaturan</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>Pilih Preset...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>Simpan Preset</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>Pilih dan kelola preset</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>Simpan pengaturan saat ini sebagai preset</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>Buka pengaturan Audio Spasial</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>Seret kiri: Putar / Seret kanan: Geser / Tombol +-: Zoom</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>Seret kiri: Putar / Seret kanan: Geser / Tombol +-: Zoom / Klik kanan: Menu</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>Beton</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>Kayu</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>Kaca</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>Bentuk L</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>Katedral</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>Studio</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>Kustom</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>Ekonomi</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>Standar</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>Tinggi</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>Editor Bentuk Ruangan</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>Manajer Material</value></data>
+<data name="VerticesList" xml:space="preserve"><value>Verteks</value></data>
+<data name="FacesList" xml:space="preserve"><value>Permukaan</value></data>
+<data name="AddVertex" xml:space="preserve"><value>Tambah Verteks</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>Hapus Verteks</value></data>
+<data name="AddFace" xml:space="preserve"><value>Tambah Permukaan</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>Hapus Permukaan</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>Simpan Geometri</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>Simpan Geometri</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>Masukkan nama geometri:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>Edit Bentuk Ruangan...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>Kelola Material...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>Muat Geometri</value></data>
+<data name="ResetSource" xml:space="preserve"><value>Reset Posisi Sumber</value></data>
+<data name="ResetListener" xml:space="preserve"><value>Reset Posisi Pendengar</value></data>
+<data name="CenterSource" xml:space="preserve"><value>Tengahkan Sumber</value></data>
+<data name="CenterListener" xml:space="preserve"><value>Tengahkan Pendengar</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>Tukar Sumber/Pendengar</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>Opsi Tampilan</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>Daftar Material</value></data>
+<data name="MaterialName" xml:space="preserve"><value>Nama</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>Absorpsi</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>Tambah Material</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>Perbarui</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>Hapus material ""{0}""?</value></data>
 </root>

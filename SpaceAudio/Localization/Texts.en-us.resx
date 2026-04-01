@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>Delete</value></data>
 <data name="Rename" xml:space="preserve"><value>Rename</value></data>
 <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+<data name="Apply" xml:space="preserve"><value>Apply</value></data>
 <data name="Settings" xml:space="preserve"><value>Settings</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>Select Preset...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>Save Preset</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>Select and manage presets</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>Save current settings as preset</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>Open Space Audio settings</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>Left drag: Rotate / Right drag: Pan / +- buttons: Zoom</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>Left drag: Rotate / Right drag: Pan / +- buttons: Zoom / Right click: Menu</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>Concrete</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>Wood</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>Glass</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>L-Shaped</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>Cathedral</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>Studio</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>Custom</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>Economy</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>Standard</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>High</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>Room Shape Editor</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>Material Manager</value></data>
+<data name="VerticesList" xml:space="preserve"><value>Vertices</value></data>
+<data name="FacesList" xml:space="preserve"><value>Faces</value></data>
+<data name="AddVertex" xml:space="preserve"><value>Add Vertex</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>Remove Vertex</value></data>
+<data name="AddFace" xml:space="preserve"><value>Add Face</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>Remove Face</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>Save Geometry</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>Save Geometry</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>Enter geometry name:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>Edit Room Shape...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>Manage Materials...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>Load Geometry</value></data>
+<data name="ResetSource" xml:space="preserve"><value>Reset Source Position</value></data>
+<data name="ResetListener" xml:space="preserve"><value>Reset Listener Position</value></data>
+<data name="CenterSource" xml:space="preserve"><value>Center Source</value></data>
+<data name="CenterListener" xml:space="preserve"><value>Center Listener</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>Swap Source/Listener</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>View Options</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>Materials</value></data>
+<data name="MaterialName" xml:space="preserve"><value>Name</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>Absorption</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>Add Material</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>Update</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>Delete material ""{0}""?</value></data>
 </root>

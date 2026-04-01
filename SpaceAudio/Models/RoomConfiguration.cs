@@ -24,6 +24,8 @@ public sealed class RoomConfiguration
     public float EarlyLevel { get; set; } = -3.0f;
     public float LateLevel { get; set; } = -6.0f;
     public float DryWetMix { get; set; } = 0.3f;
+    public string CustomGeometryId { get; set; } = "";
+    public RoomGeometry? EmbeddedGeometry { get; set; }
 
     public RoomConfiguration Clone() => new()
     {
@@ -46,6 +48,8 @@ public sealed class RoomConfiguration
         Diffusion = Diffusion,
         EarlyLevel = EarlyLevel,
         LateLevel = LateLevel,
-        DryWetMix = DryWetMix
+        DryWetMix = DryWetMix,
+        CustomGeometryId = CustomGeometryId,
+        EmbeddedGeometry = EmbeddedGeometry?.Clone()
     };
 }

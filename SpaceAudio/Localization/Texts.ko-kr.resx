@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>삭제</value></data>
 <data name="Rename" xml:space="preserve"><value>이름 변경</value></data>
 <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+<data name="Apply" xml:space="preserve"><value>적용</value></data>
 <data name="Settings" xml:space="preserve"><value>설정</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>프리셋 선택...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>프리셋 저장</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>프리셋 선택 및 관리</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>현재 설정을 프리셋으로 저장</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>스페이스 오디오 설정 열기</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>좌클릭 드래그: 회전 / 우클릭 드래그: 이동 / +-버튼: 줌</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>좌클릭 드래그: 회전 / 우클릭 드래그: 이동 / +-버튼: 줌 / 우클릭: 메뉴</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>콘크리트</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>목재</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>유리</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>L자형</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>대성당</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>스튜디오</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>사용자 정의</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>이코노미</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>스탠다드</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>고품질</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>방 형태 에디터</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>재질 관리</value></data>
+<data name="VerticesList" xml:space="preserve"><value>꼭짓점 목록</value></data>
+<data name="FacesList" xml:space="preserve"><value>면 목록</value></data>
+<data name="AddVertex" xml:space="preserve"><value>꼭짓점 추가</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>꼭짓점 제거</value></data>
+<data name="AddFace" xml:space="preserve"><value>면 추가</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>면 제거</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>지오메트리 저장</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>지오메트리 저장</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>지오메트리 이름 입력:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>방 형태 편집...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>재질 관리...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>지오메트리 로드</value></data>
+<data name="ResetSource" xml:space="preserve"><value>음원 위치 초기화</value></data>
+<data name="ResetListener" xml:space="preserve"><value>리스너 위치 초기화</value></data>
+<data name="CenterSource" xml:space="preserve"><value>음원 중앙 배치</value></data>
+<data name="CenterListener" xml:space="preserve"><value>리스너 중앙 배치</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>음원/리스너 교체</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>뷰 옵션</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>재질 목록</value></data>
+<data name="MaterialName" xml:space="preserve"><value>이름</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>흡음률</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>재질 추가</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>업데이트</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>재질 ""{0}""을(를) 삭제하시겠습니까?</value></data>
 </root>

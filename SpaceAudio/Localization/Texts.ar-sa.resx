@@ -105,6 +105,7 @@
 <data name="Delete" xml:space="preserve"><value>حذف</value></data>
 <data name="Rename" xml:space="preserve"><value>إعادة تسمية</value></data>
 <data name="Cancel" xml:space="preserve"><value>إلغاء</value></data>
+<data name="Apply" xml:space="preserve"><value>تطبيق</value></data>
 <data name="Settings" xml:space="preserve"><value>إعدادات</value></data>
 <data name="SelectPreset" xml:space="preserve"><value>اختر إعداد مسبق...</value></data>
 <data name="SavePresetTitle" xml:space="preserve"><value>حفظ الإعداد المسبق</value></data>
@@ -133,7 +134,7 @@
 <data name="TooltipPreset" xml:space="preserve"><value>اختيار وإدارة الإعدادات المسبقة</value></data>
 <data name="TooltipSave" xml:space="preserve"><value>حفظ الإعدادات الحالية كإعداد مسبق</value></data>
 <data name="TooltipSettings" xml:space="preserve"><value>فتح إعدادات الصوت المكاني</value></data>
-<data name="Tooltip3DView" xml:space="preserve"><value>سحب يسار: تدوير / سحب يمين: تحريك / أزرار +-: تكبير</value></data>
+<data name="Tooltip3DView" xml:space="preserve"><value>سحب يسار: تدوير / سحب يمين: تحريك / أزرار +-: تكبير / نقر يمين: قائمة</value></data>
 <data name="MaterialConcrete" xml:space="preserve"><value>خرسانة</value></data>
 <data name="MaterialWood" xml:space="preserve"><value>خشب</value></data>
 <data name="MaterialGlass" xml:space="preserve"><value>زجاج</value></data>
@@ -146,7 +147,34 @@
 <data name="ShapeLShaped" xml:space="preserve"><value>على شكل L</value></data>
 <data name="ShapeCathedral" xml:space="preserve"><value>كاتدرائية</value></data>
 <data name="ShapeStudio" xml:space="preserve"><value>استوديو</value></data>
+<data name="ShapeCustom" xml:space="preserve"><value>مخصص</value></data>
 <data name="QualityEconomy" xml:space="preserve"><value>اقتصادي</value></data>
 <data name="QualityStandard" xml:space="preserve"><value>قياسي</value></data>
 <data name="QualityHigh" xml:space="preserve"><value>عالية</value></data>
+<data name="ShapeEditorTitle" xml:space="preserve"><value>محرر شكل الغرفة</value></data>
+<data name="MaterialManagerTitle" xml:space="preserve"><value>مدير المواد</value></data>
+<data name="VerticesList" xml:space="preserve"><value>رؤوس</value></data>
+<data name="FacesList" xml:space="preserve"><value>أوجه</value></data>
+<data name="AddVertex" xml:space="preserve"><value>إضافة رأس</value></data>
+<data name="RemoveVertex" xml:space="preserve"><value>إزالة رأس</value></data>
+<data name="AddFace" xml:space="preserve"><value>إضافة وجه</value></data>
+<data name="RemoveFace" xml:space="preserve"><value>إزالة وجه</value></data>
+<data name="SaveGeometry" xml:space="preserve"><value>حفظ الهندسة</value></data>
+<data name="SaveGeometryTitle" xml:space="preserve"><value>حفظ الهندسة</value></data>
+<data name="EnterGeometryName" xml:space="preserve"><value>أدخل اسم الهندسة:</value></data>
+<data name="EditRoomShape" xml:space="preserve"><value>تحرير شكل الغرفة...</value></data>
+<data name="ManageMaterials" xml:space="preserve"><value>إدارة المواد...</value></data>
+<data name="LoadGeometry" xml:space="preserve"><value>تحميل الهندسة</value></data>
+<data name="ResetSource" xml:space="preserve"><value>إعادة تعيين موقع المصدر</value></data>
+<data name="ResetListener" xml:space="preserve"><value>إعادة تعيين موقع المستمع</value></data>
+<data name="CenterSource" xml:space="preserve"><value>توسيط المصدر</value></data>
+<data name="CenterListener" xml:space="preserve"><value>توسيط المستمع</value></data>
+<data name="SwapPositions" xml:space="preserve"><value>تبادل المصدر/المستمع</value></data>
+<data name="ViewOptions" xml:space="preserve"><value>خيارات العرض</value></data>
+<data name="MaterialsList" xml:space="preserve"><value>المواد</value></data>
+<data name="MaterialName" xml:space="preserve"><value>اسم</value></data>
+<data name="MaterialAbsorption" xml:space="preserve"><value>امتصاص</value></data>
+<data name="AddMaterial" xml:space="preserve"><value>إضافة مادة</value></data>
+<data name="UpdateMaterial" xml:space="preserve"><value>تحديث</value></data>
+<data name="DeleteMaterialConfirm" xml:space="preserve"><value>هل تريد حذف المادة ""{0}""؟</value></data>
 </root>

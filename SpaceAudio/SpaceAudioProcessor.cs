@@ -9,7 +9,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 {
     private readonly SpaceAudioEffect _item;
 
-    private EarlyReflectionEngine? _earlyEngine;
+    private GeometricReflectionEngine? _geoEngine;
     private FeedbackDelayNetwork? _fdn;
     private DelayLine? _preDelayL;
     private DelayLine? _preDelayR;
@@ -93,7 +93,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
             float delayedL = _preDelayL!.Process(inL, preDelaySamples);
             float delayedR = _preDelayR!.Process(inR, preDelaySamples);
 
-            _earlyEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
+            _geoEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
             _fdn!.Process(delayedL, delayedR, out float lateL, out float lateR);
 
             lateL = _hfFilterL!.Process(lateL);
@@ -119,7 +119,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         float delayedL = _preDelayL!.Process(inL, _cachedPreDelaySamples);
         float delayedR = _preDelayR!.Process(inR, _cachedPreDelaySamples);
 
-        _earlyEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
+        _geoEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
         _fdn!.Process(delayedL, delayedR, out float lateL, out float lateR);
 
         lateL = _hfFilterL!.Process(lateL);
@@ -139,7 +139,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     {
         if (snapshot == _lastSnapshot && _configured) return;
 
-        _earlyEngine!.Configure(in snapshot, hz);
+        _geoEngine!.Configure(snapshot.Geometry, in snapshot, hz);
         _fdn!.Configure(in snapshot, hz);
 
         float hfCutoff = 0.45f * (1.0f - snapshot.HfDamping * 0.8f);
@@ -158,9 +158,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 
     private void EnsureInitialized(int hz)
     {
-        if (_lastHz == hz && _earlyEngine is not null) return;
+        if (_lastHz == hz && _geoEngine is not null) return;
 
-        _earlyEngine?.Dispose();
+        _geoEngine?.Dispose();
         _fdn?.Dispose();
         _preDelayL?.Dispose();
         _preDelayR?.Dispose();
@@ -172,7 +172,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 
         _preDelayL = new DelayLine(maxPreDelay);
         _preDelayR = new DelayLine(maxPreDelay);
-        _earlyEngine = new EarlyReflectionEngine(maxEarlyDelay);
+        _geoEngine = new GeometricReflectionEngine(maxEarlyDelay);
         _fdn = new FeedbackDelayNetwork(hz);
         _hfFilterL = new LowPassOnePoleCascade(0.4f);
         _hfFilterR = new LowPassOnePoleCascade(0.4f);
@@ -207,7 +207,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         Input?.Seek(position);
         _preDelayL?.Reset();
         _preDelayR?.Reset();
-        _earlyEngine?.Reset();
+        _geoEngine?.Reset();
         _fdn?.Reset();
         _hfFilterL?.Reset();
         _hfFilterR?.Reset();
