@@ -40,9 +40,23 @@ public sealed class RoomGeometry
             if (face.VertexIndices.Length < 3) continue;
             int i0 = face.VertexIndices[0], i1 = face.VertexIndices[1], i2 = face.VertexIndices[2];
             if (i0 >= Vertices.Length || i1 >= Vertices.Length || i2 >= Vertices.Length) continue;
-            float abs = face.MaterialIndex >= 0 && face.MaterialIndex < Materials.Length
-                ? Materials[face.MaterialIndex].Absorption : 0.1f;
-            planes[i] = FacePlane.FromVertices(in Vertices[i0], in Vertices[i1], in Vertices[i2], abs);
+
+            float abs;
+            float spectralDamping;
+
+            if (face.MaterialIndex >= 0 && face.MaterialIndex < Materials.Length)
+            {
+                var mat = Materials[face.MaterialIndex];
+                abs = mat.Absorption;
+                spectralDamping = mat.SpectralDamping;
+            }
+            else
+            {
+                abs = 0.1f;
+                spectralDamping = 0.3f;
+            }
+
+            planes[i] = FacePlane.FromVertices(in Vertices[i0], in Vertices[i1], in Vertices[i2], abs, spectralDamping);
         }
         return planes;
     }
@@ -145,14 +159,14 @@ public sealed class RoomGeometry
         var indices = face.VertexIndices.AsSpan();
         int n = indices.Length;
         if (n < 3) return false;
-        
+
         Span<int> validIndices = stackalloc int[n];
         int count = 0;
         foreach (int i in indices)
             if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
-            
+
         if (count < 3) return false;
-        
+
         bool inside = false;
         int j = count - 1;
         for (int i = 0; i < count; i++)
@@ -257,15 +271,15 @@ public sealed class RoomGeometry
         if (IsPointInsideXZ(x, z)) return (x, z);
         var floorFace = FindFloorFace();
         if (floorFace is null) return (x, z);
-        
+
         var indices = floorFace.VertexIndices.AsSpan();
         Span<int> validIndices = stackalloc int[indices.Length];
         int count = 0;
         foreach (int i in indices)
             if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
-            
+
         if (count < 3) return (x, z);
-        
+
         float minDistSq = float.MaxValue;
         float bestX = x, bestZ = z;
         for (int i = 0; i < count; i++)
@@ -300,13 +314,13 @@ public sealed class RoomGeometry
         if (Faces.Length == 0 || Vertices.Length == 0) return (endX, endZ);
         var floorFace = FindFloorFace();
         if (floorFace is null) return (endX, endZ);
-        
+
         var indices = floorFace.VertexIndices.AsSpan();
         Span<int> validIndices = stackalloc int[indices.Length];
         int count = 0;
         foreach (int i in indices)
             if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
-            
+
         if (count < 3) return (endX, endZ);
 
         float dx = endX - startX;
@@ -384,9 +398,9 @@ public sealed class RoomGeometry
         {
             float hitX = startX + dx * closestU;
             float hitZ = startZ + dz * closestU;
-            float pushDist = 0.001f;
             if (closestU > 0.001f)
             {
+                float pushDist = 0.001f;
                 return (startX + dx * (closestU - pushDist), startZ + dz * (closestU - pushDist));
             }
             return (hitX, hitZ);
@@ -400,7 +414,7 @@ public sealed class RoomGeometry
 
     public static RoomGeometry CreateBox(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
-        var geo = new RoomGeometry
+        return new RoomGeometry
         {
             Name = Texts.PresetBox,
             ShapeId = "box",
@@ -425,13 +439,12 @@ public sealed class RoomGeometry
                 new([3, 2, 6, 7], 2)
             ]
         };
-        return geo;
     }
 
     public static RoomGeometry CreateLShaped(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
         float hw = w * 0.5f, hd = d * 0.5f;
-        var geo = new RoomGeometry
+        return new RoomGeometry
         {
             Name = Texts.PresetLShape,
             ShapeId = "lshaped",
@@ -460,14 +473,13 @@ public sealed class RoomGeometry
                 new([6, 7, 8, 9, 10, 11], 2)
             ]
         };
-        return geo;
     }
 
     public static RoomGeometry CreateCathedral(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
         float hs = h * 0.6f;
         float hw = w * 0.5f;
-        var geo = new RoomGeometry
+        return new RoomGeometry
         {
             Name = Texts.PresetCathedral,
             ShapeId = "cathedral",
@@ -493,13 +505,12 @@ public sealed class RoomGeometry
                 new([2, 7, 8, 3], 2)
             ]
         };
-        return geo;
     }
 
     public static RoomGeometry CreateStudio(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
         float hs = h * 0.8f;
-        var geo = new RoomGeometry
+        return new RoomGeometry
         {
             Name = Texts.PresetStudio,
             ShapeId = "studio",
@@ -524,7 +535,6 @@ public sealed class RoomGeometry
                 new([3, 2, 6, 7], 2)
             ]
         };
-        return geo;
     }
 
     public static RoomGeometry FromShape(RoomShape shape, float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs) =>

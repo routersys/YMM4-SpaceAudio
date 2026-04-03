@@ -14,6 +14,7 @@ public sealed class CustomMaterial
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
     public string Name { get; set; } = "";
     public float Absorption { get; set; } = 0.1f;
+    public float[] BandAbsorption { get; set; } = [];
     public bool IsBuiltIn { get; set; }
 
     [JsonIgnore]
@@ -38,7 +39,13 @@ public sealed class CustomMaterial
         _ => Name
     };
 
-    public CustomMaterial() 
+    [JsonIgnore]
+    public float SpectralDamping =>
+        BandAbsorption is { Length: >= MaterialCoefficients.BandCount }
+            ? MaterialCoefficients.ComputeSpectralDamping(BandAbsorption)
+            : 0.3f;
+
+    public CustomMaterial()
     {
         MaterialColor = GenerateCustomColor(Id);
     }
@@ -52,11 +59,27 @@ public sealed class CustomMaterial
         MaterialColor = defaultColor ?? GenerateCustomColor(id);
     }
 
+    public CustomMaterial(string id, string name, float absorption, float[] bandAbsorption, bool builtIn = false, Color? defaultColor = null)
+    {
+        Id = id;
+        Name = name;
+        Absorption = absorption;
+        BandAbsorption = bandAbsorption;
+        IsBuiltIn = builtIn;
+        MaterialColor = defaultColor ?? GenerateCustomColor(id);
+    }
+
+    public float[] GetEffectiveBandAbsorption() =>
+        BandAbsorption is { Length: >= MaterialCoefficients.BandCount }
+            ? BandAbsorption
+            : [Absorption, Absorption, Absorption, Absorption, Absorption, Absorption];
+
     public CustomMaterial Clone() => new()
     {
         Id = Id,
         Name = Name,
         Absorption = Absorption,
+        BandAbsorption = BandAbsorption.Length > 0 ? (float[])BandAbsorption.Clone() : [],
         IsBuiltIn = IsBuiltIn,
         MaterialColor = MaterialColor
     };

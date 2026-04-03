@@ -124,6 +124,7 @@ public partial class RoomShapeEditorWindow : Window
             0f, 0f, 0f,
             0f, 1.5f, 0.5f, 0.7f, -3f, -6f, 0.3f,
             0.12f, 0.1f, 0.12f,
+            0.3f, 0.3f, 0.3f,
             SpaceAudio.Enums.ReverbQuality.Standard,
             SpaceAudio.Enums.RoomShape.Custom,
             "drywall",

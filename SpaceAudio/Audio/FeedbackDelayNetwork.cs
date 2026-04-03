@@ -8,9 +8,17 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 {
     private const int Lines = 8;
     private const float ReferenceRate = 48000.0f;
+    private const float SpeedOfSound = 343.0f;
 
-    private static readonly int[] PrimeDelays = [1433, 1601, 1787, 1933, 2143, 2293, 2467, 2647];
+    private static readonly int[] FallbackPrimeDelays = [1433, 1601, 1787, 1933, 2143, 2293, 2467, 2647];
     private static readonly float InvSqrt8 = 1.0f / MathF.Sqrt(Lines);
+
+    private static readonly (int P, int Q, int R)[] RoomModes =
+    [
+        (1, 0, 0), (0, 1, 0), (0, 0, 1),
+        (1, 1, 0), (1, 0, 1), (0, 1, 1),
+        (1, 1, 1), (2, 0, 0)
+    ];
 
     private readonly DelayLine[] _delays = new DelayLine[Lines];
     private readonly DampingFilter[] _dampers = new DampingFilter[Lines];
@@ -19,6 +27,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     private readonly float[] _readOut = new float[Lines];
     private readonly float[] _mixed = new float[Lines];
     private readonly int[] _scaledDelays = new int[Lines];
+    private readonly float[] _lineDampingCoeffs = new float[Lines];
 
     public FeedbackDelayNetwork(int sampleRate)
     {
@@ -26,11 +35,12 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 
         for (int i = 0; i < Lines; i++)
         {
-            int scaled = Math.Max(1, (int)(PrimeDelays[i] * ratio));
+            int scaled = Math.Max(1, (int)(FallbackPrimeDelays[i] * ratio));
             _scaledDelays[i] = scaled;
             _delays[i] = new DelayLine(scaled * 4);
             _dampers[i] = new DampingFilter(0.3f);
             _feedbacks[i] = 0.84f;
+            _lineDampingCoeffs[i] = 0.3f;
         }
 
         _diffusers =
@@ -47,53 +57,83 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         float rt60 = Math.Max(snapshot.DecayTime, 0.1f);
         float damping = Math.Clamp(snapshot.HfDamping, 0.0f, 0.999f);
         float diffusion = Math.Clamp(snapshot.Diffusion, 0.0f, 1.0f);
-        float ratio = sampleRate / ReferenceRate;
 
-        float roomScale = MathF.Cbrt(snapshot.Width * snapshot.Height * snapshot.Depth) / 5.0f;
-        roomScale = Math.Clamp(roomScale, 0.5f, 3.0f);
+        float w = Math.Max(snapshot.Width, 0.5f);
+        float h = Math.Max(snapshot.Height, 0.5f);
+        float d = Math.Max(snapshot.Depth, 0.5f);
 
-        if (snapshot.Shape == RoomShape.Cathedral)
-        {
-            roomScale = Math.Clamp(roomScale * 1.5f, 1.0f, 4.0f);
-            diffusion = Math.Clamp(diffusion + 0.3f, 0.0f, 1.0f);
-        }
-        else if (snapshot.Shape == RoomShape.Studio)
-        {
-            roomScale = Math.Clamp(roomScale * 0.8f, 0.2f, 2.0f);
-            diffusion = Math.Clamp(diffusion - 0.2f, 0.0f, 1.0f);
-        }
-        else if (snapshot.Shape == RoomShape.LShaped)
-        {
-            roomScale = Math.Clamp(roomScale * 1.1f, 0.5f, 3.5f);
-        }
+        if (snapshot.Quality != ReverbQuality.Economy)
+            ComputeRoomModeDelays(w, h, d, sampleRate);
+        else
+            ComputeFallbackDelays(w, h, d, sampleRate);
 
         float invRt60 = -3.0f / rt60;
         float invSampleRate = 1.0f / sampleRate;
 
+        float avgSpectralDamping = (snapshot.WallSpectralDamping + snapshot.FloorSpectralDamping + snapshot.CeilingSpectralDamping) / 3.0f;
+
         for (int i = 0; i < Lines; i++)
         {
-            int scaled = Math.Max(1, (int)(PrimeDelays[i] * ratio * roomScale));
-            _scaledDelays[i] = Math.Clamp(scaled, 1, _delays[i].MaxDelay - 2);
-
             float delaySeconds = _scaledDelays[i] * invSampleRate;
             float fb = MathF.Pow(10.0f, invRt60 * delaySeconds);
             _feedbacks[i] = Math.Clamp(fb, 0.0f, 0.998f);
-            _dampers[i].SetCoefficient(damping);
+
+            float lineDamping = damping;
+            if (snapshot.Quality == ReverbQuality.High)
+            {
+                float modeFreq = ComputeModeFrequency(RoomModes[i].P, RoomModes[i].Q, RoomModes[i].R, w, h, d);
+                float freqFactor = Math.Clamp(modeFreq / 1000.0f, 0.1f, 3.0f);
+                lineDamping = Math.Clamp(damping + avgSpectralDamping * freqFactor * 0.3f, 0.0f, 0.999f);
+            }
+
+            _lineDampingCoeffs[i] = lineDamping;
+            _dampers[i].SetCoefficient(lineDamping);
         }
 
-        float apGain = 0.3f + diffusion * 0.4f;
-        if (snapshot.Shape == RoomShape.Studio)
-        {
-            apGain = 0.1f + diffusion * 0.3f;
-        }
-        else if (snapshot.Shape == RoomShape.Cathedral)
-        {
-            apGain = 0.5f + diffusion * 0.45f;
-        }
-        apGain = Math.Clamp(apGain, 0.0f, 0.99f);
+        float apGain = Math.Clamp(0.3f + diffusion * 0.4f, 0.0f, 0.99f);
+        foreach (var ap in _diffusers)
+            ap.SetGain(apGain);
+    }
 
-        foreach (var d in _diffusers)
-            d.SetGain(apGain);
+    private void ComputeRoomModeDelays(float w, float h, float d, int sampleRate)
+    {
+        for (int i = 0; i < Lines; i++)
+        {
+            float freq = ComputeModeFrequency(RoomModes[i].P, RoomModes[i].Q, RoomModes[i].R, w, h, d);
+            freq = Math.Max(freq, 5.0f);
+            int delay = (int)(sampleRate / freq);
+            delay = EnsureCoprime(delay, i);
+            _scaledDelays[i] = Math.Clamp(delay, 1, _delays[i].MaxDelay - 2);
+        }
+    }
+
+    private void ComputeFallbackDelays(float w, float h, float d, int sampleRate)
+    {
+        float ratio = sampleRate / ReferenceRate;
+        float roomScale = MathF.Cbrt(w * h * d) / 5.0f;
+        roomScale = Math.Clamp(roomScale, 0.5f, 3.0f);
+
+        for (int i = 0; i < Lines; i++)
+        {
+            int scaled = Math.Max(1, (int)(FallbackPrimeDelays[i] * ratio * roomScale));
+            _scaledDelays[i] = Math.Clamp(scaled, 1, _delays[i].MaxDelay - 2);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float ComputeModeFrequency(int p, int q, int r, float w, float h, float d)
+    {
+        float px = p / w;
+        float qy = q / h;
+        float rz = r / d;
+        return SpeedOfSound * 0.5f * MathF.Sqrt(px * px + qy * qy + rz * rz);
+    }
+
+    private static int EnsureCoprime(int delay, int lineIndex)
+    {
+        int[] offsets = [0, 1, -1, 2, -2, 3, -3, 5];
+        int candidate = delay + offsets[lineIndex % offsets.Length];
+        return Math.Max(1, candidate);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

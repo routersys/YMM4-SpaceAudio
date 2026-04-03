@@ -1,4 +1,5 @@
 ﻿using SpaceAudio.Audio;
+using SpaceAudio.Enums;
 using SpaceAudio.Models;
 using System.Runtime.CompilerServices;
 using YukkuriMovieMaker.Player.Audio.Effects;
@@ -151,6 +152,14 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _cachedWet = snapshot.DryWetMix;
         _cachedDry = 1.0f - snapshot.DryWetMix;
         _cachedPreDelaySamples = Math.Clamp((int)(snapshot.PreDelayMs * 0.001f * hz), 0, _preDelayL!.MaxDelay - 1);
+
+        float stereoWidth = snapshot.Quality switch
+        {
+            ReverbQuality.High => 1.2f,
+            ReverbQuality.Standard => 1.0f,
+            _ => 0.8f
+        };
+        _widener!.SetWidth(stereoWidth);
 
         _lastSnapshot = snapshot;
         _configured = true;

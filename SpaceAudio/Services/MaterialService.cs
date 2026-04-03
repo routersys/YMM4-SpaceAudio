@@ -65,14 +65,22 @@ internal sealed class MaterialService : FileBackedServiceBase, IMaterialService
 
     public IReadOnlyList<CustomMaterial> GetBuiltIn() =>
     [
-        new("concrete", Texts.MaterialConcrete, MaterialCoefficients.GetAbsorption(WallMaterial.Concrete), true, Color.FromRgb(150, 155, 160)),
-        new("wood", Texts.MaterialWood, MaterialCoefficients.GetAbsorption(WallMaterial.Wood), true, Color.FromRgb(170, 100, 50)),
-        new("glass", Texts.MaterialGlass, MaterialCoefficients.GetAbsorption(WallMaterial.Glass), true, Color.FromRgb(150, 220, 255)),
-        new("carpet", Texts.MaterialCarpet, MaterialCoefficients.GetAbsorption(WallMaterial.Carpet), true, Color.FromRgb(180, 60, 60)),
-        new("acoustic", Texts.MaterialAcousticPanel, MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel), true, Color.FromRgb(80, 85, 95)),
-        new("brick", Texts.MaterialBrick, MaterialCoefficients.GetAbsorption(WallMaterial.Brick), true, Color.FromRgb(190, 70, 50)),
-        new("drywall", Texts.MaterialDrywall, MaterialCoefficients.GetAbsorption(WallMaterial.Drywall), true, Color.FromRgb(220, 225, 230)),
-        new("tile", Texts.MaterialTile, MaterialCoefficients.GetAbsorption(WallMaterial.Tile), true, Color.FromRgb(210, 230, 235))
+        new("concrete", Texts.MaterialConcrete, MaterialCoefficients.GetAbsorption(WallMaterial.Concrete),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Concrete), true, Color.FromRgb(150, 155, 160)),
+        new("wood", Texts.MaterialWood, MaterialCoefficients.GetAbsorption(WallMaterial.Wood),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Wood), true, Color.FromRgb(170, 100, 50)),
+        new("glass", Texts.MaterialGlass, MaterialCoefficients.GetAbsorption(WallMaterial.Glass),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Glass), true, Color.FromRgb(150, 220, 255)),
+        new("carpet", Texts.MaterialCarpet, MaterialCoefficients.GetAbsorption(WallMaterial.Carpet),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Carpet), true, Color.FromRgb(180, 60, 60)),
+        new("acoustic", Texts.MaterialAcousticPanel, MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.AcousticPanel), true, Color.FromRgb(80, 85, 95)),
+        new("brick", Texts.MaterialBrick, MaterialCoefficients.GetAbsorption(WallMaterial.Brick),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Brick), true, Color.FromRgb(190, 70, 50)),
+        new("drywall", Texts.MaterialDrywall, MaterialCoefficients.GetAbsorption(WallMaterial.Drywall),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Drywall), true, Color.FromRgb(220, 225, 230)),
+        new("tile", Texts.MaterialTile, MaterialCoefficients.GetAbsorption(WallMaterial.Tile),
+            MaterialCoefficients.GetBandAbsorption(WallMaterial.Tile), true, Color.FromRgb(210, 230, 235))
     ];
 
     public CustomMaterial? GetById(string id)

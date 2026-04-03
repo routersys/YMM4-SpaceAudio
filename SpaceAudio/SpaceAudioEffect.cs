@@ -129,6 +129,25 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         return geo;
     }
 
+    private static (float Absorption, float SpectralDamping) ResolveMaterialProperties(string materialId, WallMaterial fallback)
+    {
+        var mat = Services.ServiceLocator.MaterialService.GetById(materialId);
+        if (mat is not null)
+        {
+            float abs = mat.Absorption;
+            float sd = mat.SpectralDamping;
+            if (mat.BandAbsorption is { Length: >= MaterialCoefficients.BandCount })
+            {
+                abs = MaterialCoefficients.ComputeBroadband(mat.BandAbsorption);
+                sd = MaterialCoefficients.ComputeSpectralDamping(mat.BandAbsorption);
+            }
+            return (abs, sd);
+        }
+
+        var bands = MaterialCoefficients.GetBandAbsorption(fallback);
+        return (MaterialCoefficients.GetAbsorption(fallback), MaterialCoefficients.ComputeSpectralDamping(bands));
+    }
+
     public RoomSnapshot CreateSnapshot(long frame, long totalFrames, int hz)
     {
         float w = (float)RoomWidth.GetValue(frame, totalFrames, hz);
@@ -144,13 +163,14 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         float ly = (float)ListenerY.GetValue(frame, totalFrames, hz);
         float lz = (float)ListenerZ.GetValue(frame, totalFrames, hz);
 
-        float wallAbs = Services.ServiceLocator.MaterialService.GetById(_wallMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_wallMaterial);
-        float floorAbs = Services.ServiceLocator.MaterialService.GetById(_floorMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_floorMaterial);
-        float ceilAbs = Services.ServiceLocator.MaterialService.GetById(_ceilingMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_ceilingMaterial);
+        var (wallAbs, wallSD) = ResolveMaterialProperties(_wallMaterialId, _wallMaterial);
+        var (floorAbs, floorSD) = ResolveMaterialProperties(_floorMaterialId, _floorMaterial);
+        var (ceilAbs, ceilSD) = ResolveMaterialProperties(_ceilingMaterialId, _ceilingMaterial);
 
         if (geometry is null && _roomShape != RoomShape.Rectangular)
         {
             geometry = RoomGeometry.FromShape(_roomShape, w, h, d, wallAbs, floorAbs, ceilAbs);
+            UpdateGeometryMaterialSpectralData(geometry, wallAbs, wallSD, floorAbs, floorSD, ceilAbs, ceilSD);
         }
 
         if (geometry is not null)
@@ -182,9 +202,57 @@ public sealed class SpaceAudioEffect : AudioEffectBase
             (float)LateLevel.GetValue(frame, totalFrames, hz),
             (float)DryWetMix.GetValue(frame, totalFrames, hz),
             wallAbs, floorAbs, ceilAbs,
+            wallSD, floorSD, ceilSD,
             SpaceAudioSettings.Default.Quality,
             _roomShape, _wallMaterialId, _floorMaterialId, _ceilingMaterialId,
             geometry);
+    }
+
+    private static void UpdateGeometryMaterialSpectralData(RoomGeometry geometry,
+        float wallAbs, float wallSD, float floorAbs, float floorSD, float ceilAbs, float ceilSD)
+    {
+        if (geometry.Materials.Length == 0) return;
+
+        foreach (var mat in geometry.Materials)
+        {
+            string name = mat.Name.ToLowerInvariant();
+            if (name.Contains("floor"))
+            {
+                mat.Absorption = floorAbs;
+                mat.BandAbsorption = GenerateSyntheticBands(floorAbs, floorSD);
+            }
+            else if (name.Contains("ceil"))
+            {
+                mat.Absorption = ceilAbs;
+                mat.BandAbsorption = GenerateSyntheticBands(ceilAbs, ceilSD);
+            }
+            else
+            {
+                mat.Absorption = wallAbs;
+                mat.BandAbsorption = GenerateSyntheticBands(wallAbs, wallSD);
+            }
+        }
+
+        geometry.Invalidate();
+    }
+
+    private static float[] GenerateSyntheticBands(float broadband, float spectralDamping)
+    {
+        float ratio = (1.0f - spectralDamping) / (1.0f + spectralDamping);
+        ratio = Math.Clamp(ratio, 0.01f, 1.0f);
+
+        float lowAbs = broadband * (2.0f / (1.0f + ratio));
+        float highAbs = lowAbs * ratio;
+
+        return
+        [
+            Math.Clamp(lowAbs * 0.9f, 0.0f, 0.99f),
+            Math.Clamp(lowAbs, 0.0f, 0.99f),
+            Math.Clamp(broadband, 0.0f, 0.99f),
+            Math.Clamp(broadband * 1.05f, 0.0f, 0.99f),
+            Math.Clamp(highAbs * 1.1f, 0.0f, 0.99f),
+            Math.Clamp(highAbs, 0.0f, 0.99f)
+        ];
     }
 
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>

@@ -2,7 +2,7 @@
 
 namespace SpaceAudio.Models;
 
-public readonly record struct FacePlane(float Nx, float Ny, float Nz, float D, float Absorption)
+public readonly record struct FacePlane(float Nx, float Ny, float Nz, float D, float Absorption, float SpectralDamping)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public GeometryVertex ReflectPoint(in GeometryVertex p)
@@ -15,12 +15,12 @@ public readonly record struct FacePlane(float Nx, float Ny, float Nz, float D, f
     public float DistanceToPoint(in GeometryVertex p) =>
         MathF.Abs(Nx * p.X + Ny * p.Y + Nz * p.Z + D);
 
-    public static FacePlane FromVertices(in GeometryVertex v0, in GeometryVertex v1, in GeometryVertex v2, float absorption)
+    public static FacePlane FromVertices(in GeometryVertex v0, in GeometryVertex v1, in GeometryVertex v2, float absorption, float spectralDamping = 0.3f)
     {
         var e1 = v1.Subtract(in v0);
         var e2 = v2.Subtract(in v0);
         var normal = GeometryVertex.Cross(in e1, in e2).Normalized();
         float d = -GeometryVertex.Dot(in normal, in v0);
-        return new(normal.X, normal.Y, normal.Z, d, absorption);
+        return new(normal.X, normal.Y, normal.Z, d, absorption, spectralDamping);
     }
 }
