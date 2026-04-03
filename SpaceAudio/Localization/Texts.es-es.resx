@@ -218,4 +218,13 @@
 <data name="FloorLabel" xml:space="preserve"><value>Suelo</value></data>
 <data name="CeilingLabel" xml:space="preserve"><value>Techo</value></data>
 <data name="WallLabel" xml:space="preserve"><value>Pared</value></data>
+<data name="MaterialBand125" xml:space="preserve"><value>125 Hz</value></data>
+<data name="MaterialBand250" xml:space="preserve"><value>250 Hz</value></data>
+<data name="MaterialBand500" xml:space="preserve"><value>500 Hz</value></data>
+<data name="MaterialBand1k" xml:space="preserve"><value>1 kHz</value></data>
+<data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
+<data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
+<data name="MaterialBandAbsorption" xml:space="preserve"><value>Absorción por banda</value></data>
+<data name="MaterialBuiltInNote" xml:space="preserve"><value>El material integrado es de sólo lectura</value></data>
+<data name="DuplicateMaterial" xml:space="preserve"><value>Duplicar</value></data>
 </root>

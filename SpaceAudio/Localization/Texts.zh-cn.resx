@@ -218,4 +218,13 @@
 <data name="FloorLabel" xml:space="preserve"><value>地板</value></data>
 <data name="CeilingLabel" xml:space="preserve"><value>天花板</value></data>
 <data name="WallLabel" xml:space="preserve"><value>墙壁</value></data>
+<data name="MaterialBand125" xml:space="preserve"><value>125 Hz</value></data>
+<data name="MaterialBand250" xml:space="preserve"><value>250 Hz</value></data>
+<data name="MaterialBand500" xml:space="preserve"><value>500 Hz</value></data>
+<data name="MaterialBand1k" xml:space="preserve"><value>1 kHz</value></data>
+<data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
+<data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
+<data name="MaterialBandAbsorption" xml:space="preserve"><value>频带吸收率</value></data>
+<data name="MaterialBuiltInNote" xml:space="preserve"><value>内置材质为只读</value></data>
+<data name="DuplicateMaterial" xml:space="preserve"><value>复制</value></data>
 </root>

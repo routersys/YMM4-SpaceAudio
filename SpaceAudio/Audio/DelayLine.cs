@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SpaceAudio.Audio;
 
@@ -14,31 +15,32 @@ internal sealed class DelayLine : IDisposable
     {
         int size = 1;
         while (size < maxDelaySamples + 1) size <<= 1;
-        _buffer = new float[size];
+        _buffer = GC.AllocateArray<float>(size, pinned: true);
         _mask = size - 1;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float Process(float input, int delaySamples)
     {
-        float output = _buffer[(_writePos - delaySamples) & _mask];
-        _buffer[_writePos & _mask] = input;
+        ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        float output = Unsafe.Add(ref baseRef, (_writePos - delaySamples) & _mask);
+        Unsafe.Add(ref baseRef, _writePos & _mask) = input;
         _writePos++;
         return output;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float Read(int delaySamples) =>
-        _buffer[(_writePos - delaySamples) & _mask];
+    public float Read(int delaySamples)
+        => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (_writePos - delaySamples) & _mask);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float ReadAt(int delaySamples, int basePos) =>
-        _buffer[(basePos - delaySamples) & _mask];
+    public float ReadAt(int delaySamples, int basePos)
+        => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (basePos - delaySamples) & _mask);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(float value)
     {
-        _buffer[_writePos & _mask] = value;
+        Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), _writePos & _mask) = value;
         _writePos++;
     }
 
@@ -51,12 +53,13 @@ internal sealed class DelayLine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ProcessInterpolated(float input, float delaySamples)
     {
+        ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
         int intDelay = (int)delaySamples;
         float frac = delaySamples - intDelay;
-        float a = _buffer[(_writePos - intDelay) & _mask];
-        float b = _buffer[(_writePos - intDelay - 1) & _mask];
+        float a = Unsafe.Add(ref baseRef, (_writePos - intDelay) & _mask);
+        float b = Unsafe.Add(ref baseRef, (_writePos - intDelay - 1) & _mask);
         float output = a + frac * (b - a);
-        _buffer[_writePos & _mask] = input;
+        Unsafe.Add(ref baseRef, _writePos & _mask) = input;
         _writePos++;
         return output;
     }

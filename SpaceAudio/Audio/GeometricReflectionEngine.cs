@@ -1,6 +1,10 @@
-﻿using SpaceAudio.Enums;
+﻿using SpaceAudio.Audio.Bvh;
+using SpaceAudio.Enums;
 using SpaceAudio.Models;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace SpaceAudio.Audio;
 
@@ -12,12 +16,17 @@ internal sealed class GeometricReflectionEngine : IDisposable
 
     private readonly DelayLine _delayL;
     private readonly DelayLine _delayR;
-    private readonly int[] _delaySamplesL = new int[MaxReflections];
-    private readonly int[] _delaySamplesR = new int[MaxReflections];
-    private readonly float[] _gainsL = new float[MaxReflections];
-    private readonly float[] _gainsR = new float[MaxReflections];
+
+    private readonly int[] _delaySamplesL = GC.AllocateArray<int>(MaxReflections, pinned: true);
+    private readonly int[] _delaySamplesR = GC.AllocateArray<int>(MaxReflections, pinned: true);
+    private readonly float[] _gainsL = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _gainsR = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _samplesL = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _samplesR = GC.AllocateArray<float>(MaxReflections, pinned: true);
     private readonly ReflectionTapFilter[] _tapFiltersL = new ReflectionTapFilter[MaxReflections];
     private readonly ReflectionTapFilter[] _tapFiltersR = new ReflectionTapFilter[MaxReflections];
+
+    private readonly FaceBvhTree _bvh = new();
     private int _activeCount;
     private int _sampleRate;
     private ReverbQuality _quality;
@@ -37,9 +46,15 @@ internal sealed class GeometricReflectionEngine : IDisposable
         ResetTapFilters();
 
         if (geometry is not null && geometry.Faces.Length > 0)
+        {
+            if (_quality != ReverbQuality.Economy)
+                _bvh.Build(geometry);
             ConfigureFromGeometry(geometry, in snapshot);
+        }
         else
+        {
             ConfigureFromRectangular(in snapshot);
+        }
     }
 
     private void ConfigureFromGeometry(RoomGeometry geometry, in RoomSnapshot snapshot)
@@ -55,26 +70,30 @@ internal sealed class GeometricReflectionEngine : IDisposable
                 continue;
 
             var imageSource = plane.ReflectPoint(in source);
-            TryAddReflection(imageSource, listener, plane.Absorption, plane.SpectralDamping, 1);
+            TryAddReflection(imageSource, listener, plane.Absorption, plane.SpectralDamping, 1, i);
         }
 
-        if (_quality != ReverbQuality.Economy)
+        if (_quality == ReverbQuality.Economy) return;
+
+        for (int i = 0; i < planes.Length && _activeCount < MaxReflections; i++)
         {
-            for (int i = 0; i < planes.Length && _activeCount < MaxReflections; i++)
+            ref readonly var p1 = ref planes[i];
+            var img1 = p1.ReflectPoint(in source);
+
+            for (int j = 0; j < planes.Length && _activeCount < MaxReflections; j++)
             {
-                for (int j = i + 1; j < planes.Length && _activeCount < MaxReflections; j++)
-                {
-                    ref readonly var p1 = ref planes[i];
-                    ref readonly var p2 = ref planes[j];
-                    var img1 = p1.ReflectPoint(new GeometryVertex(snapshot.SourceX, snapshot.SourceY, snapshot.SourceZ));
-                    var img2 = p2.ReflectPoint(new GeometryVertex(img1.X, img1.Y, img1.Z));
+                if (j == i) continue;
+                ref readonly var p2 = ref planes[j];
 
-                    float combinedAbsorption = 1.0f - (1.0f - p1.Absorption) * (1.0f - p2.Absorption);
-                    float combinedDamping = Math.Clamp(p1.SpectralDamping + p2.SpectralDamping * 0.5f, 0.0f, 0.995f);
+                var img2 = p2.ReflectPoint(in img1);
 
-                    TryAddReflection(img2, new GeometryVertex(snapshot.ListenerX, snapshot.ListenerY, snapshot.ListenerZ),
-                        combinedAbsorption, combinedDamping, 2);
-                }
+                float combinedAbsorption = 1.0f - (1.0f - p1.Absorption) * (1.0f - p2.Absorption);
+                float combinedDamping = Math.Clamp(p1.SpectralDamping + p2.SpectralDamping * 0.5f, 0.0f, 0.995f);
+
+                bool validPath = !_bvh.IsOccluded(in img2, in listener, j);
+                if (!validPath) continue;
+
+                TryAddReflection(img2, listener, combinedAbsorption, combinedDamping, 2, -1);
             }
         }
     }
@@ -93,35 +112,30 @@ internal sealed class GeometricReflectionEngine : IDisposable
 
         var listener = new GeometryVertex(lx, ly, lz);
 
-        AddRectReflection(new(-sx, sy, sz), listener, wallAbs, wallDamp, 1);
-        AddRectReflection(new(2 * w - sx, sy, sz), listener, wallAbs, wallDamp, 1);
-        AddRectReflection(new(sx, sy, -sz), listener, wallAbs, wallDamp, 1);
-        AddRectReflection(new(sx, sy, 2 * d - sz), listener, wallAbs, wallDamp, 1);
-        AddRectReflection(new(sx, -sy, sz), listener, floorAbs, floorDamp, 1);
-        AddRectReflection(new(sx, 2 * h - sy, sz), listener, ceilAbs, ceilDamp, 1);
+        TryAddReflection(new(-sx, sy, sz), listener, wallAbs, wallDamp, 1, -1);
+        TryAddReflection(new(2 * w - sx, sy, sz), listener, wallAbs, wallDamp, 1, -1);
+        TryAddReflection(new(sx, sy, -sz), listener, wallAbs, wallDamp, 1, -1);
+        TryAddReflection(new(sx, sy, 2 * d - sz), listener, wallAbs, wallDamp, 1, -1);
+        TryAddReflection(new(sx, -sy, sz), listener, floorAbs, floorDamp, 1, -1);
+        TryAddReflection(new(sx, 2 * h - sy, sz), listener, ceilAbs, ceilDamp, 1, -1);
 
-        if (_quality != ReverbQuality.Economy)
-        {
-            float w2abs = 1.0f - (1.0f - wallAbs) * (1.0f - wallAbs);
-            float w2damp = Math.Clamp(wallDamp * 1.4f, 0.0f, 0.995f);
-            AddRectReflection(new(-sx, sy, -sz), listener, w2abs, w2damp, 2);
-            AddRectReflection(new(-sx, sy, 2 * d - sz), listener, w2abs, w2damp, 2);
-            AddRectReflection(new(2 * w - sx, sy, -sz), listener, w2abs, w2damp, 2);
-            AddRectReflection(new(2 * w - sx, sy, 2 * d - sz), listener, w2abs, w2damp, 2);
+        if (_quality == ReverbQuality.Economy) return;
 
-            float wfAbs = 1.0f - (1.0f - wallAbs) * (1.0f - floorAbs);
-            float wfDamp = Math.Clamp((wallDamp + floorDamp) * 0.6f, 0.0f, 0.995f);
-            AddRectReflection(new(-sx, -sy, sz), listener, wfAbs, wfDamp, 2);
-            AddRectReflection(new(2 * w - sx, -sy, sz), listener, wfAbs, wfDamp, 2);
-        }
+        float w2abs = 1.0f - (1.0f - wallAbs) * (1.0f - wallAbs);
+        float w2damp = Math.Clamp(wallDamp * 1.4f, 0.0f, 0.995f);
+        TryAddReflection(new(-sx, sy, -sz), listener, w2abs, w2damp, 2, -1);
+        TryAddReflection(new(-sx, sy, 2 * d - sz), listener, w2abs, w2damp, 2, -1);
+        TryAddReflection(new(2 * w - sx, sy, -sz), listener, w2abs, w2damp, 2, -1);
+        TryAddReflection(new(2 * w - sx, sy, 2 * d - sz), listener, w2abs, w2damp, 2, -1);
+
+        float wfAbs = 1.0f - (1.0f - wallAbs) * (1.0f - floorAbs);
+        float wfDamp = Math.Clamp((wallDamp + floorDamp) * 0.6f, 0.0f, 0.995f);
+        TryAddReflection(new(-sx, -sy, sz), listener, wfAbs, wfDamp, 2, -1);
+        TryAddReflection(new(2 * w - sx, -sy, sz), listener, wfAbs, wfDamp, 2, -1);
     }
 
-    private void AddRectReflection(GeometryVertex imageSource, GeometryVertex listener, float absorption, float spectralDamping, int order)
-    {
-        TryAddReflection(imageSource, listener, absorption, spectralDamping, order);
-    }
-
-    private void TryAddReflection(GeometryVertex imageSource, GeometryVertex listener, float absorption, float spectralDamping, int order)
+    private void TryAddReflection(GeometryVertex imageSource, GeometryVertex listener,
+        float absorption, float spectralDamping, int order, int excludeFace)
     {
         if (_activeCount >= MaxReflections) return;
 
@@ -134,7 +148,6 @@ internal sealed class GeometricReflectionEngine : IDisposable
         float distance = MathF.Sqrt(distSq);
         float normDx = dx / distance;
         float normDy = dy / distance;
-        float normDz = dz / distance;
 
         float attenuation = (1.0f - absorption) / (1.0f + distance * 0.15f);
         if (order >= 2) attenuation *= 0.7f;
@@ -143,7 +156,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
         int idx = _activeCount;
 
         if (_quality != ReverbQuality.Economy)
-            ComputeBinauralParameters(imageSource, listener, normDx, distance, attenuation, idx);
+            ComputeBinauralParameters(imageSource, listener, normDx, normDy, distance, attenuation, idx);
         else
             ComputeSimplePanning(distance, normDx, attenuation, idx);
 
@@ -158,7 +171,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ComputeBinauralParameters(GeometryVertex imageSource, GeometryVertex listener,
-        float normDx, float distance, float attenuation, int idx)
+        float normDx, float normDy, float distance, float attenuation, int idx)
     {
         float leftEarX = listener.X - HeadRadius;
         float rightEarX = listener.X + HeadRadius;
@@ -171,11 +184,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
         float dxR = imageSource.X - rightEarX;
         float distR = MathF.Sqrt(dxR * dxR + dyL * dyL + dzL * dzL);
 
-        float delaySecL = distL / SpeedOfSound;
-        float delaySecR = distR / SpeedOfSound;
-
-        _delaySamplesL[idx] = Math.Max(1, (int)(delaySecL * _sampleRate));
-        _delaySamplesR[idx] = Math.Max(1, (int)(delaySecR * _sampleRate));
+        _delaySamplesL[idx] = Math.Max(1, (int)(distL / SpeedOfSound * _sampleRate));
+        _delaySamplesR[idx] = Math.Max(1, (int)(distR / SpeedOfSound * _sampleRate));
 
         float angle = MathF.Asin(Math.Clamp(normDx, -1.0f, 1.0f));
         float ildFactor = 1.0f + 0.4f * MathF.Abs(angle) / (MathF.PI * 0.5f);
@@ -197,9 +207,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ComputeSimplePanning(float distance, float normDx, float attenuation, int idx)
     {
-        float delaySec = distance / SpeedOfSound;
-        int samples = (int)(delaySec * _sampleRate);
-
+        int samples = (int)(distance / SpeedOfSound * _sampleRate);
         _delaySamplesL[idx] = samples;
         _delaySamplesR[idx] = samples;
 
@@ -217,28 +225,88 @@ internal sealed class GeometricReflectionEngine : IDisposable
         int posL = _delayL.CurrentWritePosition;
         int posR = _delayR.CurrentWritePosition;
 
-        outL = 0;
-        outR = 0;
         int count = _activeCount;
 
-        if (_quality == ReverbQuality.Economy)
+        ref int dsL = ref MemoryMarshal.GetArrayDataReference(_delaySamplesL);
+        ref int dsR = ref MemoryMarshal.GetArrayDataReference(_delaySamplesR);
+        ref float sL = ref MemoryMarshal.GetArrayDataReference(_samplesL);
+        ref float sR = ref MemoryMarshal.GetArrayDataReference(_samplesR);
+
+        for (int i = 0; i < count; i++)
+        {
+            Unsafe.Add(ref sL, i) = _delayL.ReadAt(Unsafe.Add(ref dsL, i), posL);
+            Unsafe.Add(ref sR, i) = _delayR.ReadAt(Unsafe.Add(ref dsR, i), posR);
+        }
+
+        if (_quality != ReverbQuality.Economy)
         {
             for (int i = 0; i < count; i++)
             {
-                outL += _delayL.ReadAt(_delaySamplesL[i], posL) * _gainsL[i];
-                outR += _delayR.ReadAt(_delaySamplesR[i], posR) * _gainsR[i];
+                Unsafe.Add(ref sL, i) = _tapFiltersL[i].Process(Unsafe.Add(ref sL, i));
+                Unsafe.Add(ref sR, i) = _tapFiltersR[i].Process(Unsafe.Add(ref sR, i));
             }
+        }
+
+        outL = SimdDotProduct(_samplesL, _gainsL, count);
+        outR = SimdDotProduct(_samplesR, _gainsR, count);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float SimdDotProduct(float[] samples, float[] gains, int count)
+    {
+        if (count == 0) return 0.0f;
+
+        ref float sampRef = ref MemoryMarshal.GetArrayDataReference(samples);
+        ref float gainRef = ref MemoryMarshal.GetArrayDataReference(gains);
+
+        float sum = 0.0f;
+
+        if (Avx.IsSupported && count >= 8)
+        {
+            var accumL = Vector256<float>.Zero;
+            int simdEnd = count & ~7;
+
+            for (int i = 0; i < simdEnd; i += 8)
+            {
+                var s = Vector256.LoadUnsafe(ref Unsafe.Add(ref sampRef, i));
+                var g = Vector256.LoadUnsafe(ref Unsafe.Add(ref gainRef, i));
+                accumL = Vector256.Add(accumL, Vector256.Multiply(s, g));
+            }
+
+            var lower = accumL.GetLower();
+            var upper = accumL.GetUpper();
+            var combined = Vector128.Add(lower, upper);
+            combined = Vector128.Add(combined, Vector128.Shuffle(combined, Vector128.Create(2, 3, 0, 1)));
+            sum = combined[0] + combined[1];
+
+            for (int i = simdEnd; i < count; i++)
+                sum += Unsafe.Add(ref sampRef, i) * Unsafe.Add(ref gainRef, i);
+        }
+        else if (Sse.IsSupported && count >= 4)
+        {
+            var accumL = Vector128<float>.Zero;
+            int simdEnd = count & ~3;
+
+            for (int i = 0; i < simdEnd; i += 4)
+            {
+                var s = Vector128.LoadUnsafe(ref Unsafe.Add(ref sampRef, i));
+                var g = Vector128.LoadUnsafe(ref Unsafe.Add(ref gainRef, i));
+                accumL = Vector128.Add(accumL, Vector128.Multiply(s, g));
+            }
+
+            accumL = Vector128.Add(accumL, Vector128.Shuffle(accumL, Vector128.Create(2, 3, 0, 1)));
+            sum = accumL[0] + accumL[1];
+
+            for (int i = simdEnd; i < count; i++)
+                sum += Unsafe.Add(ref sampRef, i) * Unsafe.Add(ref gainRef, i);
         }
         else
         {
             for (int i = 0; i < count; i++)
-            {
-                float rawL = _delayL.ReadAt(_delaySamplesL[i], posL);
-                float rawR = _delayR.ReadAt(_delaySamplesR[i], posR);
-                outL += _tapFiltersL[i].Process(rawL) * _gainsL[i];
-                outR += _tapFiltersR[i].Process(rawR) * _gainsR[i];
-            }
+                sum += Unsafe.Add(ref sampRef, i) * Unsafe.Add(ref gainRef, i);
         }
+
+        return sum;
     }
 
     private void ResetTapFilters()

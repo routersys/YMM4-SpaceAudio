@@ -218,4 +218,13 @@
 <data name="FloorLabel" xml:space="preserve"><value>바닥</value></data>
 <data name="CeilingLabel" xml:space="preserve"><value>천장</value></data>
 <data name="WallLabel" xml:space="preserve"><value>벽</value></data>
+<data name="MaterialBand125" xml:space="preserve"><value>125 Hz</value></data>
+<data name="MaterialBand250" xml:space="preserve"><value>250 Hz</value></data>
+<data name="MaterialBand500" xml:space="preserve"><value>500 Hz</value></data>
+<data name="MaterialBand1k" xml:space="preserve"><value>1 kHz</value></data>
+<data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
+<data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
+<data name="MaterialBandAbsorption" xml:space="preserve"><value>대역별 흡음률</value></data>
+<data name="MaterialBuiltInNote" xml:space="preserve"><value>기본 재질은 읽기 전용입니다</value></data>
+<data name="DuplicateMaterial" xml:space="preserve"><value>복제</value></data>
 </root>

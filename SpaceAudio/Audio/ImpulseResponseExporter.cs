@@ -1,10 +1,24 @@
-﻿using SpaceAudio.Models;
+﻿using SpaceAudio.Audio.Convolution;
+using SpaceAudio.Models;
 
 namespace SpaceAudio.Audio;
 
 internal static class ImpulseResponseExporter
 {
     public static float[] GenerateIR(RoomSnapshot snapshot, int sampleRate, float lengthSeconds = 2.0f)
+    {
+        var stereo = GenerateStereoIR(snapshot, sampleRate, lengthSeconds);
+        int total = stereo.Length;
+        float[] interleaved = new float[total * 2];
+        for (int i = 0; i < total; i++)
+        {
+            interleaved[i * 2] = stereo.Left[i];
+            interleaved[i * 2 + 1] = stereo.Right[i];
+        }
+        return interleaved;
+    }
+
+    public static StereoImpulseResponse GenerateStereoIR(RoomSnapshot snapshot, int sampleRate, float lengthSeconds = 2.0f)
     {
         int totalSamples = (int)(sampleRate * lengthSeconds);
         float[] irL = new float[totalSamples];
@@ -44,12 +58,6 @@ internal static class ImpulseResponseExporter
             irR[i] = earlyR * earlyGain + lateR * lateGain;
         }
 
-        float[] stereo = new float[totalSamples * 2];
-        for (int i = 0; i < totalSamples; i++)
-        {
-            stereo[i * 2] = irL[i];
-            stereo[i * 2 + 1] = irR[i];
-        }
-        return stereo;
+        return new StereoImpulseResponse(irL, irR);
     }
 }

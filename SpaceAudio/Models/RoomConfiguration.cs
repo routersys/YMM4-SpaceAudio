@@ -11,11 +11,11 @@ public sealed record RoomConfiguration
     public WallMaterial WallMaterial { get; set; } = WallMaterial.Drywall;
     public WallMaterial FloorMaterial { get; set; } = WallMaterial.Wood;
     public WallMaterial CeilingMaterial { get; set; } = WallMaterial.Drywall;
-    
+
     public string WallMaterialId { get; set; } = "";
     public string FloorMaterialId { get; set; } = "";
     public string CeilingMaterialId { get; set; } = "";
-    
+
     public float SourceX { get; set; } = 2.0f;
     public float SourceY { get; set; } = 1.5f;
     public float SourceZ { get; set; } = 3.0f;

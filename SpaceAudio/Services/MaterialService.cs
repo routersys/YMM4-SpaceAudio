@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using SpaceAudio.Enums;
-using System.Windows.Media;
 using SpaceAudio.Infrastructure;
 using SpaceAudio.Interfaces;
 using SpaceAudio.Localization;
@@ -8,6 +7,7 @@ using SpaceAudio.Models;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Windows.Media;
 
 namespace SpaceAudio.Services;
 

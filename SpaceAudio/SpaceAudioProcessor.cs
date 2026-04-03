@@ -1,4 +1,5 @@
 ﻿using SpaceAudio.Audio;
+using SpaceAudio.Audio.Convolution;
 using SpaceAudio.Enums;
 using SpaceAudio.Models;
 using System.Runtime.CompilerServices;
@@ -19,6 +20,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     private OutputLimiter? _limiter;
     private StereoWidener? _widener;
 
+    private OlaConvolver? _convolver;
+    private AsyncIrPipeline? _irPipeline;
+
     private RoomSnapshot _lastSnapshot;
     private int _lastHz;
     private bool _configured;
@@ -28,6 +32,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     private float _cachedWet;
     private float _cachedDry;
     private int _cachedPreDelaySamples;
+    private ReverbQuality _cachedQuality;
 
     public override int Hz => Input?.Hz ?? 0;
     public override long Duration => Input?.Duration ?? 0;
@@ -57,7 +62,11 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         {
             var snapshot = _item.CreateSnapshot(startFrame, totalFrames, hz);
             EnsureConfigured(in snapshot, hz);
-            ProcessStaticBlock(destBuffer, offset, frames);
+
+            if (_cachedQuality == ReverbQuality.High && _convolver is not null && _convolver.HasActiveIr)
+                ProcessConvolution(destBuffer, offset, frames);
+            else
+                ProcessStaticBlock(destBuffer, offset, frames);
         }
 
         return readCount;
@@ -73,6 +82,37 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 
             int idx = offset + i * 2;
             ProcessSingleFrame(buffer, idx);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ProcessConvolution(float[] buffer, int offset, int frames)
+    {
+        float dry = _cachedDry;
+        float wet = _cachedWet;
+        int preDelaySamples = _cachedPreDelaySamples;
+
+        float[] dryBuffer = new float[frames * 2];
+        Buffer.BlockCopy(buffer, offset * sizeof(float), dryBuffer, 0, frames * 2 * sizeof(float));
+
+        for (int i = 0; i < frames; i++)
+        {
+            int idx = offset + i * 2;
+            buffer[idx] = _preDelayL!.Process(buffer[idx], preDelaySamples);
+            buffer[idx + 1] = _preDelayR!.Process(buffer[idx + 1], preDelaySamples);
+        }
+
+        _convolver!.ProcessBlock(buffer, offset, frames);
+
+        for (int i = 0; i < frames; i++)
+        {
+            int idx = offset + i * 2;
+            float dryL = dryBuffer[i * 2];
+            float dryR = dryBuffer[i * 2 + 1];
+            buffer[idx] = SoftClipper.Process(dryL * dry + buffer[idx] * wet);
+            buffer[idx + 1] = SoftClipper.Process(dryR * dry + buffer[idx + 1] * wet);
+            _widener!.Process(ref buffer[idx], ref buffer[idx + 1]);
+            _limiter!.Process(ref buffer[idx], ref buffer[idx + 1]);
         }
     }
 
@@ -152,6 +192,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _cachedWet = snapshot.DryWetMix;
         _cachedDry = 1.0f - snapshot.DryWetMix;
         _cachedPreDelaySamples = Math.Clamp((int)(snapshot.PreDelayMs * 0.001f * hz), 0, _preDelayL!.MaxDelay - 1);
+        _cachedQuality = snapshot.Quality;
 
         float stereoWidth = snapshot.Quality switch
         {
@@ -160,6 +201,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
             _ => 0.8f
         };
         _widener!.SetWidth(stereoWidth);
+
+        if (snapshot.Quality == ReverbQuality.High && _irPipeline is not null)
+            _irPipeline.Submit(in snapshot, hz);
 
         _lastSnapshot = snapshot;
         _configured = true;
@@ -175,6 +219,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _preDelayR?.Dispose();
         _hfFilterL?.Dispose();
         _hfFilterR?.Dispose();
+        _convolver?.Dispose();
+        _irPipeline?.Dispose();
 
         int maxPreDelay = (int)(0.2f * hz) + 256;
         int maxEarlyDelay = (int)(0.1f * hz) + 256;
@@ -187,6 +233,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _hfFilterR = new LowPassOnePoleCascade(0.4f);
         _limiter = new OutputLimiter(hz);
         _widener = new StereoWidener();
+        _convolver = new OlaConvolver();
+        _irPipeline = new AsyncIrPipeline(_convolver);
+
         _lastHz = hz;
         _configured = false;
     }
@@ -221,6 +270,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _hfFilterL?.Reset();
         _hfFilterR?.Reset();
         _limiter?.Reset();
+        _convolver?.Reset();
         _configured = false;
     }
 }
