@@ -38,6 +38,28 @@ internal sealed class DelayLine : IDisposable
         => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (basePos - delaySamples) & _mask);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float ReadInterpolated(float delaySamples)
+    {
+        ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        int intDelay = (int)delaySamples;
+        float frac = delaySamples - intDelay;
+        float a = Unsafe.Add(ref baseRef, (_writePos - intDelay) & _mask);
+        float b = Unsafe.Add(ref baseRef, (_writePos - intDelay - 1) & _mask);
+        return a + frac * (b - a);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float ReadAtInterpolated(float delaySamples, int basePos)
+    {
+        ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        int intDelay = (int)delaySamples;
+        float frac = delaySamples - intDelay;
+        float a = Unsafe.Add(ref baseRef, (basePos - intDelay) & _mask);
+        float b = Unsafe.Add(ref baseRef, (basePos - intDelay - 1) & _mask);
+        return a + frac * (b - a);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(float value)
     {
         Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), _writePos & _mask) = value;

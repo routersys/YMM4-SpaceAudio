@@ -13,12 +13,15 @@ internal sealed class GeometricReflectionEngine : IDisposable
     private const int MaxReflections = 32;
     private const float SpeedOfSound = 343.0f;
     private const float HeadRadius = 0.085f;
+    private const float SmoothTimeSeconds = 0.001f;
 
     private readonly DelayLine _delayL;
     private readonly DelayLine _delayR;
 
-    private readonly int[] _delaySamplesL = GC.AllocateArray<int>(MaxReflections, pinned: true);
-    private readonly int[] _delaySamplesR = GC.AllocateArray<int>(MaxReflections, pinned: true);
+    private readonly float[] _targetDelayL = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _targetDelayR = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _currentDelayL = GC.AllocateArray<float>(MaxReflections, pinned: true);
+    private readonly float[] _currentDelayR = GC.AllocateArray<float>(MaxReflections, pinned: true);
     private readonly float[] _gainsL = GC.AllocateArray<float>(MaxReflections, pinned: true);
     private readonly float[] _gainsR = GC.AllocateArray<float>(MaxReflections, pinned: true);
     private readonly float[] _samplesL = GC.AllocateArray<float>(MaxReflections, pinned: true);
@@ -30,6 +33,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
     private int _activeCount;
     private int _sampleRate;
     private ReverbQuality _quality;
+    private float _delaySmooth;
+    private bool _delaysInitialized;
 
     public GeometricReflectionEngine(int maxDelaySamples)
     {
@@ -42,6 +47,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
         _sampleRate = sampleRate;
         _activeCount = 0;
         _quality = snapshot.Quality;
+        _delaySmooth = 1.0f - MathF.Exp(-1.0f / (SmoothTimeSeconds * sampleRate));
 
         ResetTapFilters();
 
@@ -54,6 +60,13 @@ internal sealed class GeometricReflectionEngine : IDisposable
         else
         {
             ConfigureFromRectangular(in snapshot);
+        }
+
+        if (!_delaysInitialized)
+        {
+            Array.Copy(_targetDelayL, _currentDelayL, MaxReflections);
+            Array.Copy(_targetDelayR, _currentDelayR, MaxReflections);
+            _delaysInitialized = true;
         }
     }
 
@@ -160,8 +173,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
         else
             ComputeSimplePanning(distance, normDx, attenuation, idx);
 
-        if (_delaySamplesL[idx] < 1 || _delaySamplesL[idx] >= _delayL.MaxDelay - 1) return;
-        if (_delaySamplesR[idx] < 1 || _delaySamplesR[idx] >= _delayR.MaxDelay - 1) return;
+        if (_targetDelayL[idx] < 1.0f || _targetDelayL[idx] >= _delayL.MaxDelay - 2) return;
+        if (_targetDelayR[idx] < 1.0f || _targetDelayR[idx] >= _delayR.MaxDelay - 2) return;
 
         _tapFiltersL[idx].SetCoefficient(spectralDamping, distance);
         _tapFiltersR[idx].SetCoefficient(spectralDamping, distance);
@@ -184,8 +197,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
         float dxR = imageSource.X - rightEarX;
         float distR = MathF.Sqrt(dxR * dxR + dyL * dyL + dzL * dzL);
 
-        _delaySamplesL[idx] = Math.Max(1, (int)(distL / SpeedOfSound * _sampleRate));
-        _delaySamplesR[idx] = Math.Max(1, (int)(distR / SpeedOfSound * _sampleRate));
+        _targetDelayL[idx] = MathF.Max(1.0f, distL / SpeedOfSound * _sampleRate);
+        _targetDelayR[idx] = MathF.Max(1.0f, distR / SpeedOfSound * _sampleRate);
 
         float angle = MathF.Asin(Math.Clamp(normDx, -1.0f, 1.0f));
         float ildFactor = 1.0f + 0.4f * MathF.Abs(angle) / (MathF.PI * 0.5f);
@@ -207,9 +220,9 @@ internal sealed class GeometricReflectionEngine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ComputeSimplePanning(float distance, float normDx, float attenuation, int idx)
     {
-        int samples = (int)(distance / SpeedOfSound * _sampleRate);
-        _delaySamplesL[idx] = samples;
-        _delaySamplesR[idx] = samples;
+        float samples = MathF.Max(1.0f, distance / SpeedOfSound * _sampleRate);
+        _targetDelayL[idx] = samples;
+        _targetDelayR[idx] = samples;
 
         float pan = Math.Clamp(normDx, -1.0f, 1.0f);
         _gainsL[idx] = attenuation * (0.5f - pan * 0.3f);
@@ -226,16 +239,23 @@ internal sealed class GeometricReflectionEngine : IDisposable
         int posR = _delayR.CurrentWritePosition;
 
         int count = _activeCount;
+        float smooth = _delaySmooth;
 
-        ref int dsL = ref MemoryMarshal.GetArrayDataReference(_delaySamplesL);
-        ref int dsR = ref MemoryMarshal.GetArrayDataReference(_delaySamplesR);
+        ref float tdL = ref MemoryMarshal.GetArrayDataReference(_targetDelayL);
+        ref float tdR = ref MemoryMarshal.GetArrayDataReference(_targetDelayR);
+        ref float cdL = ref MemoryMarshal.GetArrayDataReference(_currentDelayL);
+        ref float cdR = ref MemoryMarshal.GetArrayDataReference(_currentDelayR);
         ref float sL = ref MemoryMarshal.GetArrayDataReference(_samplesL);
         ref float sR = ref MemoryMarshal.GetArrayDataReference(_samplesR);
 
         for (int i = 0; i < count; i++)
         {
-            Unsafe.Add(ref sL, i) = _delayL.ReadAt(Unsafe.Add(ref dsL, i), posL);
-            Unsafe.Add(ref sR, i) = _delayR.ReadAt(Unsafe.Add(ref dsR, i), posR);
+            float curL = Unsafe.Add(ref cdL, i) + smooth * (Unsafe.Add(ref tdL, i) - Unsafe.Add(ref cdL, i));
+            float curR = Unsafe.Add(ref cdR, i) + smooth * (Unsafe.Add(ref tdR, i) - Unsafe.Add(ref cdR, i));
+            Unsafe.Add(ref cdL, i) = curL;
+            Unsafe.Add(ref cdR, i) = curR;
+            Unsafe.Add(ref sL, i) = _delayL.ReadAtInterpolated(curL, posL);
+            Unsafe.Add(ref sR, i) = _delayR.ReadAtInterpolated(curR, posR);
         }
 
         if (_quality != ReverbQuality.Economy)
@@ -323,6 +343,11 @@ internal sealed class GeometricReflectionEngine : IDisposable
         _delayL.Reset();
         _delayR.Reset();
         ResetTapFilters();
+        Array.Clear(_targetDelayL);
+        Array.Clear(_targetDelayR);
+        Array.Clear(_currentDelayL);
+        Array.Clear(_currentDelayR);
+        _delaysInitialized = false;
     }
 
     public void Dispose()

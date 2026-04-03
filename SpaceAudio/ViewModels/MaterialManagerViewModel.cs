@@ -2,9 +2,7 @@
 using SpaceAudio.Localization;
 using SpaceAudio.Models;
 using SpaceAudio.Services;
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -43,14 +41,14 @@ public sealed class MaterialManagerViewModel : ViewModelBase
             _newBands[3] = Math.Clamp(bands.Length > 3 ? bands[3] : value.Absorption, 0f, 0.99f);
             _newBands[4] = Math.Clamp(bands.Length > 4 ? bands[4] : value.Absorption, 0f, 0.99f);
             _newBands[5] = Math.Clamp(bands.Length > 5 ? bands[5] : value.Absorption, 0f, 0.99f);
-            
+
             OnPropertyChanged(nameof(Band125Double));
             OnPropertyChanged(nameof(Band250Double));
             OnPropertyChanged(nameof(Band500Double));
             OnPropertyChanged(nameof(Band1kDouble));
             OnPropertyChanged(nameof(Band2kDouble));
             OnPropertyChanged(nameof(Band4kDouble));
-            
+
             SyncBroadband();
             CommandManager.InvalidateRequerySuggested();
         }

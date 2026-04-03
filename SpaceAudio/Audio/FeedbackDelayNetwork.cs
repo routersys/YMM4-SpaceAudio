@@ -12,6 +12,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     private const int Lines = 8;
     private const float ReferenceRate = 48000.0f;
     private const float SpeedOfSound = 343.0f;
+    private const float SmoothTimeSeconds = 0.001f;
 
     private static readonly int[] FallbackPrimeDelays = [1433, 1601, 1787, 1933, 2143, 2293, 2467, 2647];
     private static readonly float InvSqrt8 = 1.0f / MathF.Sqrt(Lines);
@@ -29,8 +30,11 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     private readonly float[] _feedbacks = GC.AllocateArray<float>(Lines, pinned: true);
     private readonly float[] _readOut = GC.AllocateArray<float>(Lines, pinned: true);
     private readonly float[] _mixed = GC.AllocateArray<float>(Lines, pinned: true);
-    private readonly int[] _scaledDelays = new int[Lines];
+    private readonly float[] _targetDelays = new float[Lines];
+    private readonly float[] _currentDelays = GC.AllocateArray<float>(Lines, pinned: true);
     private readonly float[] _lineDampingCoeffs = new float[Lines];
+    private float _delaySmooth;
+    private bool _delaysInitialized;
 
     public FeedbackDelayNetwork(int sampleRate)
     {
@@ -39,12 +43,16 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         for (int i = 0; i < Lines; i++)
         {
             int scaled = Math.Max(1, (int)(FallbackPrimeDelays[i] * ratio));
-            _scaledDelays[i] = scaled;
+            _targetDelays[i] = scaled;
+            _currentDelays[i] = scaled;
             _delays[i] = new DelayLine(scaled * 4);
             _dampers[i] = new DampingFilter(0.3f);
             _feedbacks[i] = 0.84f;
             _lineDampingCoeffs[i] = 0.3f;
         }
+
+        _delaySmooth = 1.0f - MathF.Exp(-1.0f / (SmoothTimeSeconds * sampleRate));
+        _delaysInitialized = true;
 
         _diffusers =
         [
@@ -65,10 +73,18 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         float h = Math.Max(snapshot.Height, 0.5f);
         float d = Math.Max(snapshot.Depth, 0.5f);
 
+        _delaySmooth = 1.0f - MathF.Exp(-1.0f / (SmoothTimeSeconds * sampleRate));
+
         if (snapshot.Quality != ReverbQuality.Economy)
             ComputeRoomModeDelays(w, h, d, sampleRate);
         else
             ComputeFallbackDelays(w, h, d, sampleRate);
+
+        if (!_delaysInitialized)
+        {
+            Array.Copy(_targetDelays, _currentDelays, Lines);
+            _delaysInitialized = true;
+        }
 
         float invRt60 = -3.0f / rt60;
         float invSampleRate = 1.0f / sampleRate;
@@ -79,7 +95,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 
         for (int i = 0; i < Lines; i++)
         {
-            float delaySeconds = _scaledDelays[i] * invSampleRate;
+            float delaySeconds = _targetDelays[i] * invSampleRate;
             float fb = MathF.Pow(10.0f, invRt60 * delaySeconds);
             Unsafe.Add(ref fbRef, i) = Math.Clamp(fb, 0.0f, 0.998f);
 
@@ -108,7 +124,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
             freq = Math.Max(freq, 5.0f);
             int delay = (int)(sampleRate / freq);
             delay = EnsureCoprime(delay, i);
-            _scaledDelays[i] = Math.Clamp(delay, 1, _delays[i].MaxDelay - 2);
+            _targetDelays[i] = Math.Clamp((float)delay, 1.0f, _delays[i].MaxDelay - 2);
         }
     }
 
@@ -120,8 +136,8 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 
         for (int i = 0; i < Lines; i++)
         {
-            int scaled = Math.Max(1, (int)(FallbackPrimeDelays[i] * ratio * roomScale));
-            _scaledDelays[i] = Math.Clamp(scaled, 1, _delays[i].MaxDelay - 2);
+            float scaled = MathF.Max(1.0f, FallbackPrimeDelays[i] * ratio * roomScale);
+            _targetDelays[i] = Math.Clamp(scaled, 1.0f, _delays[i].MaxDelay - 2);
         }
     }
 
@@ -145,11 +161,15 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     public void Process(float inputL, float inputR, out float outL, out float outR)
     {
         float input = (inputL + inputR) * 0.5f;
+        float smooth = _delaySmooth;
 
         ref float readRef = ref MemoryMarshal.GetArrayDataReference(_readOut);
 
         for (int i = 0; i < Lines; i++)
-            Unsafe.Add(ref readRef, i) = _delays[i].Read(_scaledDelays[i]);
+        {
+            _currentDelays[i] += smooth * (_targetDelays[i] - _currentDelays[i]);
+            Unsafe.Add(ref readRef, i) = _delays[i].ReadInterpolated(_currentDelays[i]);
+        }
 
         HadamardMix(_readOut, _mixed);
 
@@ -232,6 +252,8 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         foreach (var d in _delays) d.Reset();
         foreach (var d in _dampers) d.Reset();
         foreach (var d in _diffusers) d.Reset();
+        Array.Clear(_currentDelays);
+        _delaysInitialized = false;
     }
 
     public void Dispose()

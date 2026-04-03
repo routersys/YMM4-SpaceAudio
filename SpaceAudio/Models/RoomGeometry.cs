@@ -340,13 +340,21 @@ public sealed class RoomGeometry
         float minDistSq = float.MaxValue;
         float bestX = x, bestZ = z;
 
+        int maxIndicesPerFace = 0;
+        foreach (var face in Faces)
+        {
+            if (face.VertexIndices.Length > maxIndicesPerFace)
+                maxIndicesPerFace = face.VertexIndices.Length;
+        }
+
+        Span<int> validIndices = stackalloc int[maxIndicesPerFace];
+
         foreach (var face in Faces)
         {
             var indices = face.VertexIndices.AsSpan();
             int n = indices.Length;
             if (n < 3) continue;
 
-            Span<int> validIndices = stackalloc int[n];
             int count = 0;
             foreach (int i in indices)
                 if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
@@ -392,13 +400,22 @@ public sealed class RoomGeometry
         float closestU = 1.0f;
         bool hit = false;
 
+        int maxIndicesPerFace = 0;
+        foreach (var face in Faces)
+        {
+            if (face.VertexIndices.Length > maxIndicesPerFace)
+                maxIndicesPerFace = face.VertexIndices.Length;
+        }
+
+        Span<int> validIndices = stackalloc int[maxIndicesPerFace];
+        Span<int> cValid = stackalloc int[maxIndicesPerFace];
+
         foreach (var face in Faces)
         {
             var indices = face.VertexIndices.AsSpan();
             int n = indices.Length;
             if (n < 3) continue;
 
-            Span<int> validIndices = stackalloc int[n];
             int count = 0;
             foreach (int i in indices)
                 if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
@@ -443,7 +460,6 @@ public sealed class RoomGeometry
                                 var cIndices = chkFace.VertexIndices.AsSpan();
                                 int cn = cIndices.Length;
                                 if (cn < 3) continue;
-                                Span<int> cValid = stackalloc int[cn];
                                 int cCount = 0;
                                 foreach (int ci in cIndices)
                                     if (ci >= 0 && ci < Vertices.Length) cValid[cCount++] = ci;

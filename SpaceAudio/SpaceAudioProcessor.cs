@@ -9,6 +9,8 @@ namespace SpaceAudio;
 
 internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 {
+    private const float PreDelaySmoothTimeSeconds = 0.001f;
+
     private readonly SpaceAudioEffect _item;
 
     private GeometricReflectionEngine? _geoEngine;
@@ -31,7 +33,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     private float _cachedLateGain;
     private float _cachedWet;
     private float _cachedDry;
-    private int _cachedPreDelaySamples;
+    private float _targetPreDelaySamples;
+    private float _currentPreDelaySamples;
+    private float _preDelaySmooth;
     private ReverbQuality _cachedQuality;
 
     public override int Hz => Input?.Hz ?? 0;
@@ -90,7 +94,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     {
         float dry = _cachedDry;
         float wet = _cachedWet;
-        int preDelaySamples = _cachedPreDelaySamples;
+        float targetPreDelay = _targetPreDelaySamples;
+        float smooth = _preDelaySmooth;
 
         float[] dryBuffer = new float[frames * 2];
         Buffer.BlockCopy(buffer, offset * sizeof(float), dryBuffer, 0, frames * 2 * sizeof(float));
@@ -98,8 +103,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         for (int i = 0; i < frames; i++)
         {
             int idx = offset + i * 2;
-            buffer[idx] = _preDelayL!.Process(buffer[idx], preDelaySamples);
-            buffer[idx + 1] = _preDelayR!.Process(buffer[idx + 1], preDelaySamples);
+            _currentPreDelaySamples += smooth * (targetPreDelay - _currentPreDelaySamples);
+            buffer[idx] = _preDelayL!.ProcessInterpolated(buffer[idx], _currentPreDelaySamples);
+            buffer[idx + 1] = _preDelayR!.ProcessInterpolated(buffer[idx + 1], _currentPreDelaySamples);
         }
 
         _convolver!.ProcessBlock(buffer, offset, frames);
@@ -123,7 +129,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         float lateGain = _cachedLateGain;
         float wet = _cachedWet;
         float dry = _cachedDry;
-        int preDelaySamples = _cachedPreDelaySamples;
+        float targetPreDelay = _targetPreDelaySamples;
+        float smooth = _preDelaySmooth;
 
         for (int i = 0; i < frames; i++)
         {
@@ -131,8 +138,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
             float inL = buffer[idx];
             float inR = buffer[idx + 1];
 
-            float delayedL = _preDelayL!.Process(inL, preDelaySamples);
-            float delayedR = _preDelayR!.Process(inR, preDelaySamples);
+            _currentPreDelaySamples += smooth * (targetPreDelay - _currentPreDelaySamples);
+            float delayedL = _preDelayL!.ProcessInterpolated(inL, _currentPreDelaySamples);
+            float delayedR = _preDelayR!.ProcessInterpolated(inR, _currentPreDelaySamples);
 
             _geoEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
             _fdn!.Process(delayedL, delayedR, out float lateL, out float lateR);
@@ -157,8 +165,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         float inL = buffer[idx];
         float inR = buffer[idx + 1];
 
-        float delayedL = _preDelayL!.Process(inL, _cachedPreDelaySamples);
-        float delayedR = _preDelayR!.Process(inR, _cachedPreDelaySamples);
+        _currentPreDelaySamples += _preDelaySmooth * (_targetPreDelaySamples - _currentPreDelaySamples);
+        float delayedL = _preDelayL!.ProcessInterpolated(inL, _currentPreDelaySamples);
+        float delayedR = _preDelayR!.ProcessInterpolated(inR, _currentPreDelaySamples);
 
         _geoEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
         _fdn!.Process(delayedL, delayedR, out float lateL, out float lateR);
@@ -180,6 +189,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     {
         if (snapshot == _lastSnapshot && _configured) return;
 
+        bool firstConfigure = !_configured;
+
         _geoEngine!.Configure(snapshot.Geometry, in snapshot, hz);
         _fdn!.Configure(in snapshot, hz);
 
@@ -191,8 +202,11 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _cachedLateGain = MathF.Pow(10.0f, snapshot.LateLevel / 20.0f);
         _cachedWet = snapshot.DryWetMix;
         _cachedDry = 1.0f - snapshot.DryWetMix;
-        _cachedPreDelaySamples = Math.Clamp((int)(snapshot.PreDelayMs * 0.001f * hz), 0, _preDelayL!.MaxDelay - 1);
+        _targetPreDelaySamples = Math.Clamp(snapshot.PreDelayMs * 0.001f * hz, 0.0f, _preDelayL!.MaxDelay - 2);
         _cachedQuality = snapshot.Quality;
+
+        if (firstConfigure)
+            _currentPreDelaySamples = _targetPreDelaySamples;
 
         float stereoWidth = snapshot.Quality switch
         {
@@ -235,6 +249,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _widener = new StereoWidener();
         _convolver = new OlaConvolver();
         _irPipeline = new AsyncIrPipeline(_convolver);
+        _preDelaySmooth = 1.0f - MathF.Exp(-1.0f / (PreDelaySmoothTimeSeconds * hz));
+        _currentPreDelaySamples = 0.0f;
 
         _lastHz = hz;
         _configured = false;
@@ -271,6 +287,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _hfFilterR?.Reset();
         _limiter?.Reset();
         _convolver?.Reset();
+        _currentPreDelaySamples = 0.0f;
         _configured = false;
     }
 }
