@@ -126,9 +126,9 @@ public partial class RoomShapeEditorWindow : Window
             0.12f, 0.1f, 0.12f,
             SpaceAudio.Enums.ReverbQuality.Standard,
             SpaceAudio.Enums.RoomShape.Custom,
-            SpaceAudio.Enums.WallMaterial.Drywall,
-            SpaceAudio.Enums.WallMaterial.Wood,
-            SpaceAudio.Enums.WallMaterial.Drywall,
+            "drywall",
+            "wood",
+            "drywall",
             geo);
 
         PreviewHost.Render(_camera, _palette, snap,

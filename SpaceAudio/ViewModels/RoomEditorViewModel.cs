@@ -20,7 +20,6 @@ public sealed class RoomEditorViewModel : ViewModelBase
     private readonly IUserNotificationService _notifications;
     private readonly IUpdateService _updateService;
     private readonly IRoomGeometryService _geometryService;
-    private readonly IMaterialService _materialService;
 
     private SpaceAudioEffect? _effect;
     private SpaceAudioEffect.RoomParameters? _roomParameters;
@@ -147,22 +146,19 @@ public sealed class RoomEditorViewModel : ViewModelBase
         ServiceLocator.PresetService,
         ServiceLocator.NotificationService,
         ServiceLocator.UpdateService,
-        ServiceLocator.GeometryService,
-        ServiceLocator.MaterialService)
+        ServiceLocator.GeometryService)
     { }
 
     public RoomEditorViewModel(
         IPresetService presetService,
         IUserNotificationService notifications,
         IUpdateService updateService,
-        IRoomGeometryService geometryService,
-        IMaterialService materialService)
+        IRoomGeometryService geometryService)
     {
         _presetService = presetService;
         _notifications = notifications;
         _updateService = updateService;
         _geometryService = geometryService;
-        _materialService = materialService;
         _presetService.PresetsChanged += (_, _) => LoadPresets();
 
         SavePresetCommand = new AsyncRelayCommand(_ => SavePresetAsync());
@@ -286,6 +282,9 @@ public sealed class RoomEditorViewModel : ViewModelBase
             EarlyLevel = _effect.EarlyLevelValue,
             LateLevel = _effect.LateLevelValue,
             DryWetMix = _effect.DryWetMixValue,
+            WallMaterialId = _effect.WallMaterialId,
+            FloorMaterialId = _effect.FloorMaterialId,
+            CeilingMaterialId = _effect.CeilingMaterialId,
             CustomGeometryId = _effect.CustomGeometryId,
             EmbeddedGeometry = _effect.CustomGeometry?.Clone()
         };
@@ -365,6 +364,9 @@ public sealed class RoomEditorViewModel : ViewModelBase
         _effect.WallMaterialValue = config.WallMaterial;
         _effect.FloorMaterialValue = config.FloorMaterial;
         _effect.CeilingMaterialValue = config.CeilingMaterial;
+        _effect.WallMaterialId = string.IsNullOrEmpty(config.WallMaterialId) ? config.WallMaterial.ToString().ToLowerInvariant() : config.WallMaterialId;
+        _effect.FloorMaterialId = string.IsNullOrEmpty(config.FloorMaterialId) ? config.FloorMaterial.ToString().ToLowerInvariant() : config.FloorMaterialId;
+        _effect.CeilingMaterialId = string.IsNullOrEmpty(config.CeilingMaterialId) ? config.CeilingMaterial.ToString().ToLowerInvariant() : config.CeilingMaterialId;
         _effect.RoomShapeValue = config.Shape;
         _effect.CustomGeometryId = config.CustomGeometryId;
         _effect.CustomGeometry = config.EmbeddedGeometry?.Clone();

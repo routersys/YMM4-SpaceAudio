@@ -1,6 +1,7 @@
 ﻿using SpaceAudio.Audio;
 using SpaceAudio.Enums;
 using SpaceAudio.Models;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Numerics;
 using System.Windows;
@@ -141,7 +142,7 @@ internal sealed class RoomVisualHost : FrameworkElement
         using var dc = _floorVisual.RenderOpen();
         if (snap.Width <= 0 || snap.Depth <= 0) return;
 
-        var gridPen = GetMaterialPen(snap.FloorMat, 100, 0.8);
+        var gridPen = GetMaterialPen(snap.FloorMaterialId, 100, 0.8);
 
         if (snap.Shape == SpaceAudio.Enums.RoomShape.Custom && snap.Geometry is { } cg && cg.Vertices.Length > 0)
         {
@@ -203,9 +204,9 @@ internal sealed class RoomVisualHost : FrameworkElement
         var lines = new (Vector3, Vector3)[24];
         int lCount = 0;
 
-        var ceilMat = snap.CeilMat;
-        var floorMat = snap.FloorMat;
-        var wallMat = snap.WallMat;
+        var ceilMat = snap.CeilingMaterialId;
+        var floorMat = snap.FloorMaterialId;
+        var wallMat = snap.WallMaterialId;
 
         void AddFace(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
         {
@@ -362,7 +363,7 @@ internal sealed class RoomVisualHost : FrameworkElement
             dc.DrawGeometry(wallBrush, edgePen, geo);
         }
 
-        var cornerPen = GetMaterialPen(snap.WallMat, 150, 1.0);
+        var cornerPen = GetMaterialPen(snap.WallMaterialId, 150, 1.0);
         for (int i = 0; i < lCount; i++)
             DrawClippedLine(dc, cornerPen, lines[i].Item1, lines[i].Item2, viewMat, w, h);
     }
@@ -639,7 +640,7 @@ internal sealed class RoomVisualHost : FrameworkElement
 
     private void RenderCustomGeometry(DrawingContext dc, Matrix4x4 viewMat, RoomGeometry geo, in RoomSnapshot snap, double w, double h)
     {
-        WallMaterial wallMat = snap.WallMat;
+        string wallMat = snap.WallMaterialId;
         var faceDataList = new List<(float depth, int faceIdx)>();
         for (int fi = 0; fi < geo.Faces.Length; fi++)
         {
@@ -666,12 +667,12 @@ internal sealed class RoomVisualHost : FrameworkElement
             var face = geo.Faces[fi];
             if (face.VertexIndices.Length < 3) continue;
 
-            WallMaterial mat = wallMat;
+            string mat = wallMat;
             if (face.MaterialIndex >= 0 && face.MaterialIndex < geo.Materials.Length)
             {
                 var mName = geo.Materials[face.MaterialIndex].Name.ToLowerInvariant();
-                if (mName.Contains("floor")) mat = WallMaterial.Wood;
-                else if (mName.Contains("ceil") || mName.Contains("ceiling")) mat = WallMaterial.Drywall;
+                if (mName.Contains("floor")) mat = "wood";
+                else if (mName.Contains("ceil") || mName.Contains("ceiling")) mat = "drywall";
             }
 
             int vCount = Math.Min(face.VertexIndices.Length, 16);
@@ -723,10 +724,17 @@ internal sealed class RoomVisualHost : FrameworkElement
 
 
 
+    private readonly record struct TextKey(string Text, double Size, Brush Brush);
+    private static readonly ConcurrentDictionary<TextKey, FormattedText> _textCache = new();
+
     private static FormattedText MakeText(string text, double size, Brush brush)
     {
-        return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+        var key = new TextKey(text, size, brush);
+        if (_textCache.TryGetValue(key, out var ft)) return ft;
+        ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             InfoTypeface, size, brush, Dpi);
+        _textCache.TryAdd(key, ft);
+        return ft;
     }
 
     private static Pen FrozenPen(Brush brush, double thickness)
@@ -744,37 +752,42 @@ internal sealed class RoomVisualHost : FrameworkElement
         return b;
     }
 
-    private static Color GetMaterialColor(WallMaterial m) => m switch
+    private static Color GetMaterialColor(string m)
     {
-        WallMaterial.Concrete => Color.FromRgb(150, 155, 160),
-        WallMaterial.Wood => Color.FromRgb(170, 100, 50),
-        WallMaterial.Glass => Color.FromRgb(150, 220, 255),
-        WallMaterial.Carpet => Color.FromRgb(180, 60, 60),
-        WallMaterial.AcousticPanel => Color.FromRgb(80, 85, 95),
-        WallMaterial.Brick => Color.FromRgb(190, 70, 50),
-        WallMaterial.Drywall => Color.FromRgb(220, 225, 230),
-        WallMaterial.Tile => Color.FromRgb(210, 230, 235),
-        _ => Color.FromRgb(120, 120, 120)
-    };
+        var mat = SpaceAudio.Services.ServiceLocator.MaterialService.GetById(m);
+        return mat?.MaterialColor ?? Color.FromRgb(120, 120, 120);
+    }
 
-    private static SolidColorBrush GetMaterialBrush(WallMaterial m, byte alpha)
+    private readonly record struct BrushKey(string Mat, byte Alpha);
+    private static readonly ConcurrentDictionary<BrushKey, SolidColorBrush> _brushCache = new();
+
+    private static SolidColorBrush GetMaterialBrush(string m, byte alpha)
     {
+        var key = new BrushKey(m, alpha);
+        if (_brushCache.TryGetValue(key, out var cached)) return cached;
         var c = GetMaterialColor(m);
         var b = new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
         b.Freeze();
+        _brushCache.TryAdd(key, b);
         return b;
     }
 
-    private static Pen GetMaterialPen(WallMaterial m, byte alpha, double t)
+    private readonly record struct PenKey(string Mat, byte Alpha, double Thickness);
+    private static readonly ConcurrentDictionary<PenKey, Pen> _penCache = new();
+
+    private static Pen GetMaterialPen(string m, byte alpha, double t)
     {
+        var key = new PenKey(m, alpha, t);
+        if (_penCache.TryGetValue(key, out var cached)) return cached;
         var p = new Pen(GetMaterialBrush(m, alpha), t);
         p.Freeze();
+        _penCache.TryAdd(key, p);
         return p;
     }
 
-    private readonly record struct FaceData(Vector3 P0, Vector3 P1, Vector3 P2, Vector3 P3, float Depth, WallMaterial Material)
+    private readonly record struct FaceData(Vector3 P0, Vector3 P1, Vector3 P2, Vector3 P3, float Depth, string Material)
     {
-        public FaceData(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 eye, WallMaterial mat) : this(
+        public FaceData(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 eye, string mat) : this(
             p0, p1, p2, p3,
             ((p0 + p1 + p2 + p3) * 0.25f - eye).LengthSquared(), mat)
         { }

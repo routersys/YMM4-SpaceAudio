@@ -4,17 +4,24 @@ namespace SpaceAudio.Infrastructure;
 
 internal sealed class CompositeDisposable : IDisposable
 {
+    private readonly Lock _lock = new();
     private readonly List<IDisposable> _disposables = [];
-    private bool _disposed;
+    private volatile bool _disposed;
 
     public void Add(IDisposable disposable)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _disposables.Add(disposable);
+        ArgumentNullException.ThrowIfNull(disposable);
+        lock (_lock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _disposables.Add(disposable);
+        }
     }
 
     public IDisposable Subscribe(INotifyPropertyChanged source, PropertyChangedEventHandler handler)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(handler);
         source.PropertyChanged += handler;
         var subscription = new ActionDisposable(() => source.PropertyChanged -= handler);
         Add(subscription);
@@ -23,20 +30,29 @@ internal sealed class CompositeDisposable : IDisposable
 
     public void Clear()
     {
-        foreach (var d in _disposables) d.Dispose();
-        _disposables.Clear();
+        List<IDisposable> snapshot;
+        lock (_lock)
+        {
+            snapshot = [.. _disposables];
+            _disposables.Clear();
+        }
+        foreach (var d in snapshot) d.Dispose();
     }
 
     public void Dispose()
     {
         if (_disposed) return;
-        _disposed = true;
+        lock (_lock)
+        {
+            if (_disposed) return;
+            _disposed = true;
+        }
         Clear();
     }
 
     private sealed class ActionDisposable(Action action) : IDisposable
     {
         private Action? _action = action;
-        public void Dispose() { _action?.Invoke(); _action = null; }
+        public void Dispose() { Interlocked.Exchange(ref _action, null)?.Invoke(); }
     }
 }

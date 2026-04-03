@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SpaceAudio.Enums;
+using System.Windows.Media;
 using SpaceAudio.Infrastructure;
 using SpaceAudio.Interfaces;
 using SpaceAudio.Localization;
@@ -10,14 +11,12 @@ using System.Text;
 
 namespace SpaceAudio.Services;
 
-public sealed class MaterialService : IMaterialService
+internal sealed class MaterialService : FileBackedServiceBase, IMaterialService
 {
     private const string FileName = "materials.json";
     private readonly string _filePath;
     private readonly IUserNotificationService _notifications;
-    private readonly Lock _lock = new();
     private List<CustomMaterial>? _cache;
-    private volatile bool _initialized;
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -33,36 +32,63 @@ public sealed class MaterialService : IMaterialService
         _filePath = Path.Combine(assemblyDir, FileName);
     }
 
+    protected override string DirectoryPath =>
+        Path.GetDirectoryName(_filePath) ?? "";
+
+    protected override void OnInitializing()
+    {
+        byte[]? data = AtomicFileOperations.ReadWithFallback(_filePath);
+        if (data is { Length: > 0 })
+        {
+            try
+            {
+                string json = Encoding.UTF8.GetString(data);
+                _cache = JsonConvert.DeserializeObject<List<CustomMaterial>>(json, JsonSettings) ?? [];
+            }
+            catch (JsonException ex)
+            {
+                _notifications.ShowWarning($"{Texts.PresetLoadFailed}: {ex.Message}");
+                _cache = [];
+            }
+        }
+        else
+        {
+            _cache = [];
+        }
+    }
+
     public IReadOnlyList<CustomMaterial> GetAll()
     {
-        EnsureInit();
-        lock (_lock) return [.. GetBuiltIn(), .. (_cache ?? [])];
+        EnsureInitialized();
+        lock (SyncRoot) return [.. GetBuiltIn(), .. (_cache ?? [])];
     }
 
     public IReadOnlyList<CustomMaterial> GetBuiltIn() =>
     [
-        new("concrete", Texts.MaterialConcrete, MaterialCoefficients.GetAbsorption(WallMaterial.Concrete), true),
-        new("wood", Texts.MaterialWood, MaterialCoefficients.GetAbsorption(WallMaterial.Wood), true),
-        new("glass", Texts.MaterialGlass, MaterialCoefficients.GetAbsorption(WallMaterial.Glass), true),
-        new("carpet", Texts.MaterialCarpet, MaterialCoefficients.GetAbsorption(WallMaterial.Carpet), true),
-        new("acoustic", Texts.MaterialAcousticPanel, MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel), true),
-        new("brick", Texts.MaterialBrick, MaterialCoefficients.GetAbsorption(WallMaterial.Brick), true),
-        new("drywall", Texts.MaterialDrywall, MaterialCoefficients.GetAbsorption(WallMaterial.Drywall), true),
-        new("tile", Texts.MaterialTile, MaterialCoefficients.GetAbsorption(WallMaterial.Tile), true)
+        new("concrete", Texts.MaterialConcrete, MaterialCoefficients.GetAbsorption(WallMaterial.Concrete), true, Color.FromRgb(150, 155, 160)),
+        new("wood", Texts.MaterialWood, MaterialCoefficients.GetAbsorption(WallMaterial.Wood), true, Color.FromRgb(170, 100, 50)),
+        new("glass", Texts.MaterialGlass, MaterialCoefficients.GetAbsorption(WallMaterial.Glass), true, Color.FromRgb(150, 220, 255)),
+        new("carpet", Texts.MaterialCarpet, MaterialCoefficients.GetAbsorption(WallMaterial.Carpet), true, Color.FromRgb(180, 60, 60)),
+        new("acoustic", Texts.MaterialAcousticPanel, MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel), true, Color.FromRgb(80, 85, 95)),
+        new("brick", Texts.MaterialBrick, MaterialCoefficients.GetAbsorption(WallMaterial.Brick), true, Color.FromRgb(190, 70, 50)),
+        new("drywall", Texts.MaterialDrywall, MaterialCoefficients.GetAbsorption(WallMaterial.Drywall), true, Color.FromRgb(220, 225, 230)),
+        new("tile", Texts.MaterialTile, MaterialCoefficients.GetAbsorption(WallMaterial.Tile), true, Color.FromRgb(210, 230, 235))
     ];
 
     public CustomMaterial? GetById(string id)
     {
-        EnsureInit();
-        foreach (var m in GetBuiltIn()) if (m.Id == id) return m;
-        lock (_lock) return _cache?.FirstOrDefault(m => m.Id == id);
+        EnsureInitialized();
+        foreach (var m in GetBuiltIn())
+            if (m.Id == id) return m;
+        lock (SyncRoot) return _cache?.Find(m => m.Id == id);
     }
 
     public bool Save(CustomMaterial material)
     {
-        EnsureInit();
+        ArgumentNullException.ThrowIfNull(material);
+        EnsureInitialized();
         if (material.IsBuiltIn) return false;
-        lock (_lock)
+        lock (SyncRoot)
         {
             _cache ??= [];
             int idx = _cache.FindIndex(m => m.Id == material.Id);
@@ -76,34 +102,14 @@ public sealed class MaterialService : IMaterialService
 
     public void Delete(string id)
     {
-        EnsureInit();
-        lock (_lock)
+        ArgumentException.ThrowIfNullOrEmpty(id);
+        EnsureInitialized();
+        lock (SyncRoot)
         {
             _cache?.RemoveAll(m => m.Id == id);
             Persist();
         }
         MaterialsChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void EnsureInit()
-    {
-        if (_initialized) return;
-        lock (_lock)
-        {
-            if (_initialized) return;
-            byte[]? data = AtomicFileOperations.ReadWithFallback(_filePath);
-            if (data is { Length: > 0 })
-            {
-                try
-                {
-                    string json = Encoding.UTF8.GetString(data);
-                    _cache = JsonConvert.DeserializeObject<List<CustomMaterial>>(json, JsonSettings) ?? [];
-                }
-                catch { _cache = []; }
-            }
-            else _cache = [];
-            _initialized = true;
-        }
     }
 
     private void Persist()
@@ -113,6 +119,9 @@ public sealed class MaterialService : IMaterialService
             string json = JsonConvert.SerializeObject(_cache ?? [], JsonSettings);
             AtomicFileOperations.Write(_filePath, Encoding.UTF8.GetBytes(json));
         }
-        catch { }
+        catch (IOException ex)
+        {
+            _notifications.ShowWarning($"{Texts.PresetSaveFailed}: {ex.Message}");
+        }
     }
 }

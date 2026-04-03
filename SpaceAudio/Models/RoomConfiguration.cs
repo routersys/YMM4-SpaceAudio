@@ -2,7 +2,7 @@
 
 namespace SpaceAudio.Models;
 
-public sealed class RoomConfiguration
+public sealed record RoomConfiguration
 {
     public RoomShape Shape { get; set; } = RoomShape.Rectangular;
     public float Width { get; set; } = 8.0f;
@@ -11,6 +11,11 @@ public sealed class RoomConfiguration
     public WallMaterial WallMaterial { get; set; } = WallMaterial.Drywall;
     public WallMaterial FloorMaterial { get; set; } = WallMaterial.Wood;
     public WallMaterial CeilingMaterial { get; set; } = WallMaterial.Drywall;
+    
+    public string WallMaterialId { get; set; } = "";
+    public string FloorMaterialId { get; set; } = "";
+    public string CeilingMaterialId { get; set; } = "";
+    
     public float SourceX { get; set; } = 2.0f;
     public float SourceY { get; set; } = 1.5f;
     public float SourceZ { get; set; } = 3.0f;
@@ -27,29 +32,5 @@ public sealed class RoomConfiguration
     public string CustomGeometryId { get; set; } = "";
     public RoomGeometry? EmbeddedGeometry { get; set; }
 
-    public RoomConfiguration Clone() => new()
-    {
-        Shape = Shape,
-        Width = Width,
-        Height = Height,
-        Depth = Depth,
-        WallMaterial = WallMaterial,
-        FloorMaterial = FloorMaterial,
-        CeilingMaterial = CeilingMaterial,
-        SourceX = SourceX,
-        SourceY = SourceY,
-        SourceZ = SourceZ,
-        ListenerX = ListenerX,
-        ListenerY = ListenerY,
-        ListenerZ = ListenerZ,
-        PreDelayMs = PreDelayMs,
-        DecayTime = DecayTime,
-        HfDamping = HfDamping,
-        Diffusion = Diffusion,
-        EarlyLevel = EarlyLevel,
-        LateLevel = LateLevel,
-        DryWetMix = DryWetMix,
-        CustomGeometryId = CustomGeometryId,
-        EmbeddedGeometry = EmbeddedGeometry?.Clone()
-    };
+    public RoomConfiguration DeepClone() => this with { EmbeddedGeometry = EmbeddedGeometry?.Clone() };
 }

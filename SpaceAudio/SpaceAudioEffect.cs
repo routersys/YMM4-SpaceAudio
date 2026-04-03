@@ -1,4 +1,4 @@
-using SpaceAudio.Attributes;
+﻿using SpaceAudio.Attributes;
 using SpaceAudio.Enums;
 using SpaceAudio.Localization;
 using SpaceAudio.Models;
@@ -49,14 +49,31 @@ public sealed class SpaceAudioEffect : AudioEffectBase
     public Animation LateLevel { get; } = new Animation(-6.0, -40, 6);
     public Animation DryWetMix { get; } = new Animation(0.3, 0, 1);
 
-    public WallMaterial WallMaterialValue { get => _wallMaterial; set => Set(ref _wallMaterial, value); }
+    public WallMaterial WallMaterialValue { get => _wallMaterial; set { if (Set(ref _wallMaterial, value)) TryMigrateMaterial(value, ref _wallMaterialId); } }
     private WallMaterial _wallMaterial = WallMaterial.Drywall;
 
-    public WallMaterial FloorMaterialValue { get => _floorMaterial; set => Set(ref _floorMaterial, value); }
+    public WallMaterial FloorMaterialValue { get => _floorMaterial; set { if (Set(ref _floorMaterial, value)) TryMigrateMaterial(value, ref _floorMaterialId); } }
     private WallMaterial _floorMaterial = WallMaterial.Wood;
 
-    public WallMaterial CeilingMaterialValue { get => _ceilingMaterial; set => Set(ref _ceilingMaterial, value); }
+    public WallMaterial CeilingMaterialValue { get => _ceilingMaterial; set { if (Set(ref _ceilingMaterial, value)) TryMigrateMaterial(value, ref _ceilingMaterialId); } }
     private WallMaterial _ceilingMaterial = WallMaterial.Drywall;
+
+    public string WallMaterialId { get => _wallMaterialId; set => Set(ref _wallMaterialId, value); }
+    private string _wallMaterialId = "drywall";
+
+    public string FloorMaterialId { get => _floorMaterialId; set => Set(ref _floorMaterialId, value); }
+    private string _floorMaterialId = "wood";
+
+    public string CeilingMaterialId { get => _ceilingMaterialId; set => Set(ref _ceilingMaterialId, value); }
+    private string _ceilingMaterialId = "drywall";
+
+    private void TryMigrateMaterial(WallMaterial enumValue, ref string targetId)
+    {
+        string newId = enumValue.ToString().ToLowerInvariant();
+        if (newId == "acousticpanel") newId = "acoustic";
+        if (targetId != newId && string.IsNullOrEmpty(targetId))
+            targetId = newId;
+    }
 
     public string CustomGeometryId { get => _customGeometryId; set => Set(ref _customGeometryId, value); }
     private string _customGeometryId = "";
@@ -119,13 +136,6 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         float d = (float)RoomDepth.GetValue(frame, totalFrames, hz);
 
         var geometry = ResolveScaledGeometry(w, h, d);
-        if (geometry is null && _roomShape != RoomShape.Rectangular)
-        {
-            geometry = RoomGeometry.FromShape(_roomShape, w, h, d,
-                MaterialCoefficients.GetAbsorption(_wallMaterial),
-                MaterialCoefficients.GetAbsorption(_floorMaterial),
-                MaterialCoefficients.GetAbsorption(_ceilingMaterial));
-        }
 
         float sx = (float)SourceX.GetValue(frame, totalFrames, hz);
         float sy = (float)SourceY.GetValue(frame, totalFrames, hz);
@@ -133,6 +143,15 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         float lx = (float)ListenerX.GetValue(frame, totalFrames, hz);
         float ly = (float)ListenerY.GetValue(frame, totalFrames, hz);
         float lz = (float)ListenerZ.GetValue(frame, totalFrames, hz);
+
+        float wallAbs = Services.ServiceLocator.MaterialService.GetById(_wallMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_wallMaterial);
+        float floorAbs = Services.ServiceLocator.MaterialService.GetById(_floorMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_floorMaterial);
+        float ceilAbs = Services.ServiceLocator.MaterialService.GetById(_ceilingMaterialId)?.Absorption ?? MaterialCoefficients.GetAbsorption(_ceilingMaterial);
+
+        if (geometry is null && _roomShape != RoomShape.Rectangular)
+        {
+            geometry = RoomGeometry.FromShape(_roomShape, w, h, d, wallAbs, floorAbs, ceilAbs);
+        }
 
         if (geometry is not null)
         {
@@ -162,14 +181,9 @@ public sealed class SpaceAudioEffect : AudioEffectBase
             (float)EarlyLevel.GetValue(frame, totalFrames, hz),
             (float)LateLevel.GetValue(frame, totalFrames, hz),
             (float)DryWetMix.GetValue(frame, totalFrames, hz),
-            MaterialCoefficients.GetAbsorption(_wallMaterial),
-            MaterialCoefficients.GetAbsorption(_floorMaterial),
-            MaterialCoefficients.GetAbsorption(_ceilingMaterial),
+            wallAbs, floorAbs, ceilAbs,
             SpaceAudioSettings.Default.Quality,
-            _roomShape,
-            _wallMaterial,
-            _floorMaterial,
-            _ceilingMaterial,
+            _roomShape, _wallMaterialId, _floorMaterialId, _ceilingMaterialId,
             geometry);
     }
 
@@ -195,8 +209,21 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         return $"{Texts.PluginName} - {w:F0}x{h:F0}x{d:F0}m RT60:{DecayTime.Values[0].Value:F1}s";
     }
 
-    public sealed class RoomParameters(SpaceAudioEffect parent)
+    public sealed class RoomParameters : System.ComponentModel.INotifyPropertyChanged
     {
+        private readonly SpaceAudioEffect parent;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        public RoomParameters(SpaceAudioEffect parent)
+        {
+            this.parent = parent;
+            parent.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(parent.RoomShapeValue))
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(RoomShapeValue)));
+            };
+        }
+
         [Display(GroupName = nameof(Texts.GroupRoom), Name = nameof(Texts.RoomWidth), Description = nameof(Texts.RoomWidthDesc), ResourceType = typeof(Texts), Order = 100)]
         [AnimationSlider("F1", "m", 1, 50)]
         public Animation RoomWidth => parent.RoomWidth;
@@ -277,16 +304,18 @@ public sealed class SpaceAudioEffect : AudioEffectBase
 
     public sealed class MaterialParameters(SpaceAudioEffect parent)
     {
+        public SpaceAudioEffect Effect => parent;
+
         [Display(GroupName = nameof(Texts.GroupMaterial), Name = nameof(Texts.WallMaterial), Description = nameof(Texts.WallMaterialDesc), ResourceType = typeof(Texts), Order = 600)]
-        [EnumComboBox]
-        public WallMaterial WallMaterialValue { get => parent.WallMaterialValue; set => parent.WallMaterialValue = value; }
+        [WallMaterialComboBox]
+        public string WallMaterialId { get => parent.WallMaterialId; set => parent.WallMaterialId = value; }
 
         [Display(GroupName = nameof(Texts.GroupMaterial), Name = nameof(Texts.FloorMaterial), Description = nameof(Texts.FloorMaterialDesc), ResourceType = typeof(Texts), Order = 601)]
-        [EnumComboBox]
-        public WallMaterial FloorMaterialValue { get => parent.FloorMaterialValue; set => parent.FloorMaterialValue = value; }
+        [FloorMaterialComboBox]
+        public string FloorMaterialId { get => parent.FloorMaterialId; set => parent.FloorMaterialId = value; }
 
         [Display(GroupName = nameof(Texts.GroupMaterial), Name = nameof(Texts.CeilingMaterial), Description = nameof(Texts.CeilingMaterialDesc), ResourceType = typeof(Texts), Order = 602)]
-        [EnumComboBox]
-        public WallMaterial CeilingMaterialValue { get => parent.CeilingMaterialValue; set => parent.CeilingMaterialValue = value; }
+        [CeilingMaterialComboBox]
+        public string CeilingMaterialId { get => parent.CeilingMaterialId; set => parent.CeilingMaterialId = value; }
     }
 }

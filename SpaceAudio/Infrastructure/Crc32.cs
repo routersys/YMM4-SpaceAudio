@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
 
 namespace SpaceAudio.Infrastructure;
 
@@ -23,8 +25,9 @@ internal static class Crc32
     public static uint Compute(ReadOnlySpan<byte> data)
     {
         uint crc = 0xFFFFFFFFu;
-        foreach (byte b in data)
-            crc = (crc >> 8) ^ Table[(crc ^ b) & 0xFF];
+        ref uint tableRef = ref System.Runtime.InteropServices.MemoryMarshal.GetArrayDataReference(Table);
+        for (int i = 0; i < data.Length; i++)
+            crc = (crc >> 8) ^ Unsafe.Add(ref tableRef, (int)((crc ^ data[i]) & 0xFF));
         return crc ^ 0xFFFFFFFFu;
     }
 }

@@ -4,6 +4,8 @@ namespace SpaceAudio.Models;
 
 public readonly record struct GeometryVertex(float X, float Y, float Z)
 {
+    public static readonly GeometryVertex Zero = default;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float DistanceTo(in GeometryVertex other)
     {
@@ -44,6 +46,20 @@ public readonly record struct GeometryVertex(float X, float Y, float Z)
     public GeometryVertex Normalized()
     {
         float len = Length();
-        return len > 1e-8f ? new(X / len, Y / len, Z / len) : default;
+        return len > 1e-8f ? new(X / len, Y / len, Z / len) : Zero;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GeometryVertex operator +(in GeometryVertex a, in GeometryVertex b) =>
+        new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GeometryVertex operator -(in GeometryVertex a, in GeometryVertex b) =>
+        new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GeometryVertex operator *(in GeometryVertex v, float s) => v.Scale(s);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GeometryVertex operator *(float s, in GeometryVertex v) => v.Scale(s);
 }

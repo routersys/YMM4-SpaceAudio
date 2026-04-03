@@ -24,8 +24,8 @@ public readonly record struct RoomSnapshot(
     float CeilingAbsorption,
     ReverbQuality Quality,
     RoomShape Shape,
-    WallMaterial WallMat,
-    WallMaterial FloorMat,
-    WallMaterial CeilMat,
+    string WallMaterialId,
+    string FloorMaterialId,
+    string CeilingMaterialId,
     RoomGeometry? Geometry = null
 );

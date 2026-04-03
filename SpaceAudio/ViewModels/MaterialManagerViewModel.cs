@@ -4,6 +4,7 @@ using SpaceAudio.Models;
 using SpaceAudio.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SpaceAudio.ViewModels;
 
@@ -14,6 +15,7 @@ public sealed class MaterialManagerViewModel : ViewModelBase
     private CustomMaterial? _selectedMaterial;
     private string _newName = "";
     private float _newAbsorption = 0.1f;
+    private Color _newColor = CustomMaterial.GenerateCustomColor(Guid.NewGuid().ToString("N"));
 
     public ObservableCollection<CustomMaterial> Materials { get; } = [];
 
@@ -27,6 +29,7 @@ public sealed class MaterialManagerViewModel : ViewModelBase
             {
                 NewName = value.Name;
                 NewAbsorption = value.Absorption;
+                NewColor = value.MaterialColor;
             }
         }
     }
@@ -45,6 +48,12 @@ public sealed class MaterialManagerViewModel : ViewModelBase
             if (!SetProperty(ref _newAbsorption, Math.Clamp(value, 0.0f, 1.0f))) return;
             OnPropertyChanged(nameof(NewAbsorptionDouble));
         }
+    }
+
+    public Color NewColor
+    {
+        get => _newColor;
+        set => SetProperty(ref _newColor, value);
     }
 
     public double NewAbsorptionDouble
@@ -85,11 +94,13 @@ public sealed class MaterialManagerViewModel : ViewModelBase
         var mat = new CustomMaterial
         {
             Name = _newName,
-            Absorption = _newAbsorption
+            Absorption = _newAbsorption,
+            MaterialColor = _newColor
         };
         _materialService.Save(mat);
         NewName = "";
         NewAbsorption = 0.1f;
+        NewColor = CustomMaterial.GenerateCustomColor(Guid.NewGuid().ToString("N"));
     }
 
     private void UpdateMaterial()
@@ -97,6 +108,7 @@ public sealed class MaterialManagerViewModel : ViewModelBase
         if (_selectedMaterial is null || _selectedMaterial.IsBuiltIn) return;
         _selectedMaterial.Name = _newName;
         _selectedMaterial.Absorption = _newAbsorption;
+        _selectedMaterial.MaterialColor = _newColor;
         _materialService.Save(_selectedMaterial);
     }
 

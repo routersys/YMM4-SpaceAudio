@@ -10,8 +10,12 @@ public sealed class EditScope : IDisposable
         beginAction();
     }
 
-    public static EditScope Begin(Action beginAction, Action endAction) =>
-        new(beginAction, endAction);
+    public static EditScope Begin(Action beginAction, Action endAction)
+    {
+        ArgumentNullException.ThrowIfNull(beginAction);
+        ArgumentNullException.ThrowIfNull(endAction);
+        return new(beginAction, endAction);
+    }
 
-    public void Dispose() { _endAction?.Invoke(); _endAction = null; }
+    public void Dispose() => Interlocked.Exchange(ref _endAction, null)?.Invoke();
 }

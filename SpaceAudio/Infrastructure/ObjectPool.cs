@@ -11,7 +11,7 @@ internal sealed class ObjectPool<T>(Func<T> factory, Action<T>? reset = null, in
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T Rent()
     {
-        if (_bag.TryTake(out var item))
+        if (_bag.TryTake(out T? item))
         {
             Interlocked.Decrement(ref _count);
             return item;
@@ -26,5 +26,13 @@ internal sealed class ObjectPool<T>(Func<T> factory, Action<T>? reset = null, in
         reset?.Invoke(item);
         _bag.Add(item);
         Interlocked.Increment(ref _count);
+    }
+
+    public PooledItem RentScoped() => new(this, Rent());
+
+    public readonly ref struct PooledItem(ObjectPool<T> pool, T item)
+    {
+        public T Value { get; } = item;
+        public void Dispose() => pool.Return(Value);
     }
 }

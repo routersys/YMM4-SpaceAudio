@@ -8,6 +8,7 @@ internal static class AtomicFileOperations
 
     public static void Write(string targetPath, ReadOnlySpan<byte> data)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
         string tempPath = targetPath + ".tmp";
         using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, WriteBufferSize, FileOptions.WriteThrough))
         {
@@ -23,8 +24,7 @@ internal static class AtomicFileOperations
     public static byte[]? ReadWithFallback(string targetPath)
     {
         if (TryRead(targetPath, out byte[]? primary) && primary is { Length: > 0 }) return primary;
-        string backupPath = targetPath + ".bak";
-        if (TryRead(backupPath, out byte[]? backup) && backup is { Length: > 0 }) return backup;
+        if (TryRead(targetPath + ".bak", out byte[]? backup) && backup is { Length: > 0 }) return backup;
         return null;
     }
 
@@ -33,6 +33,7 @@ internal static class AtomicFileOperations
         data = null;
         if (!File.Exists(path)) return false;
         try { data = File.ReadAllBytes(path); return true; }
-        catch { return false; }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
     }
 }

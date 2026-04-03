@@ -7,13 +7,11 @@ using System.Reflection;
 
 namespace SpaceAudio.Services;
 
-public sealed class PresetService : IPresetService
+internal sealed class PresetService : FileBackedServiceBase, IPresetService
 {
     private const string PresetExtension = ".sap";
     private readonly string _presetsDir;
     private readonly IUserNotificationService _notifications;
-    private readonly Lock _lock = new();
-    private volatile bool _initialized;
 
     public event EventHandler? PresetsChanged;
 
@@ -24,28 +22,28 @@ public sealed class PresetService : IPresetService
         _presetsDir = Path.Combine(assemblyDir, "presets");
     }
 
+    protected override string DirectoryPath => _presetsDir;
+
     public IReadOnlyList<string> GetAllPresetNames()
     {
         EnsureInitialized();
         if (!Directory.Exists(_presetsDir)) return [];
-        return Directory.GetFiles(_presetsDir, "*" + PresetExtension)
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where(name => name is not null)
-            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
-            .ToList()!;
+        return [.. Directory.GetFiles(_presetsDir, "*" + PresetExtension)
+            .Select(p => Path.GetFileNameWithoutExtension(p)!)
+            .Order(StringComparer.OrdinalIgnoreCase)];
     }
 
     public PresetInfo GetPresetInfo(string name)
     {
         EnsureInitialized();
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new PresetInfo { Name = name };
     }
 
     public RoomConfiguration? LoadPreset(string name)
     {
         EnsureInitialized();
-        string filePath = PresetPath(name);
-        byte[]? data = AtomicFileOperations.ReadWithFallback(filePath);
+        byte[]? data = AtomicFileOperations.ReadWithFallback(PresetPath(name));
         if (data is null) { _notifications.ShowError(Texts.PresetLoadFailed); return null; }
         var result = PresetFileFormat.Deserialize(data);
         if (result is null) _notifications.ShowError(Texts.PresetLoadFailed);
@@ -55,6 +53,7 @@ public sealed class PresetService : IPresetService
     public bool SavePreset(string name, RoomConfiguration config)
     {
         EnsureInitialized();
+        ArgumentNullException.ThrowIfNull(config);
         if (!IsValidName(name)) { _notifications.ShowError(Texts.InvalidPresetName); return false; }
         try
         {
@@ -63,7 +62,7 @@ public sealed class PresetService : IPresetService
             PresetsChanged?.Invoke(this, EventArgs.Empty);
             return true;
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
             _notifications.ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}");
             return false;
@@ -76,7 +75,7 @@ public sealed class PresetService : IPresetService
         string filePath = PresetPath(name);
         if (!File.Exists(filePath)) return;
         try { File.Delete(filePath); }
-        catch (Exception ex) { _notifications.ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}"); return; }
+        catch (IOException ex) { _notifications.ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}"); return; }
         PresetsChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -89,15 +88,9 @@ public sealed class PresetService : IPresetService
         if (File.Exists(newPath)) { _notifications.ShowError(Texts.PresetExists); return false; }
         if (!File.Exists(oldPath)) return false;
         try { File.Move(oldPath, newPath); }
-        catch (Exception ex) { _notifications.ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}"); return false; }
+        catch (IOException ex) { _notifications.ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}"); return false; }
         PresetsChanged?.Invoke(this, EventArgs.Empty);
         return true;
-    }
-
-    private void EnsureInitialized()
-    {
-        if (_initialized) return;
-        lock (_lock) { if (_initialized) return; Directory.CreateDirectory(_presetsDir); _initialized = true; }
     }
 
     private string PresetPath(string name) => Path.Combine(_presetsDir, name + PresetExtension);

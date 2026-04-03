@@ -7,7 +7,7 @@ namespace SpaceAudio.Infrastructure;
 
 internal static class PresetFileFormat
 {
-    private static readonly byte[] Magic = "SARP"u8.ToArray();
+    private static ReadOnlySpan<byte> Magic => "SARP"u8;
     private const ushort FormatVersion = 1;
 
     private static readonly JsonSerializerSettings JsonSettings = new()
@@ -21,7 +21,8 @@ internal static class PresetFileFormat
         byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
         uint checksum = Crc32.Compute(jsonBytes);
 
-        using var output = new MemoryStream(Magic.Length + sizeof(ushort) + sizeof(int) + sizeof(uint) + jsonBytes.Length);
+        int capacity = Magic.Length + sizeof(ushort) + sizeof(int) + sizeof(uint) + jsonBytes.Length;
+        using var output = new MemoryStream(capacity);
         output.Write(Magic);
         using var writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);
         writer.Write(FormatVersion);
@@ -37,8 +38,8 @@ internal static class PresetFileFormat
         return IsNewFormat(fileData) ? DeserializeNew(fileData) : DeserializeLegacy(fileData);
     }
 
-    private static bool IsNewFormat(byte[] data) =>
-        data.Length >= Magic.Length && data.AsSpan(0, Magic.Length).SequenceEqual(Magic);
+    private static bool IsNewFormat(ReadOnlySpan<byte> data) =>
+        data.Length >= Magic.Length && data[..Magic.Length].SequenceEqual(Magic);
 
     private static RoomConfiguration? DeserializeNew(byte[] data)
     {
@@ -57,7 +58,8 @@ internal static class PresetFileFormat
             string json = Encoding.UTF8.GetString(jsonBytes);
             return JsonConvert.DeserializeObject<RoomConfiguration>(json);
         }
-        catch { return null; }
+        catch (IOException) { return null; }
+        catch (JsonException) { return null; }
     }
 
     private static RoomConfiguration? DeserializeLegacy(byte[] data)
@@ -67,6 +69,7 @@ internal static class PresetFileFormat
             string json = Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RoomConfiguration>(json);
         }
-        catch { return null; }
+        catch (JsonException) { return null; }
+        catch (DecoderFallbackException) { return null; }
     }
 }

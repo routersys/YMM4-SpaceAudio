@@ -13,16 +13,21 @@ public sealed class RoomGeometry
     public CustomMaterial[] Materials { get; set; } = [];
 
     private FacePlane[]? _cachedPlanes;
-    private bool _planesDirty = true;
+    private volatile bool _planesDirty = true;
+    private readonly Lock _planesLock = new();
 
     public void Invalidate() => _planesDirty = true;
 
     public FacePlane[] GetPlanes()
     {
         if (!_planesDirty && _cachedPlanes is not null) return _cachedPlanes;
-        _cachedPlanes = BuildPlanes();
-        _planesDirty = false;
-        return _cachedPlanes;
+        lock (_planesLock)
+        {
+            if (!_planesDirty && _cachedPlanes is not null) return _cachedPlanes;
+            _cachedPlanes = BuildPlanes();
+            _planesDirty = false;
+            return _cachedPlanes;
+        }
     }
 
     private FacePlane[] BuildPlanes()
@@ -49,11 +54,11 @@ public sealed class RoomGeometry
         foreach (var face in Faces)
         {
             if (face.VertexIndices.Length < 3) continue;
-            var v0 = Vertices[face.VertexIndices[0]];
+            ref var v0 = ref Vertices[face.VertexIndices[0]];
             for (int i = 1; i < face.VertexIndices.Length - 1; i++)
             {
-                var v1 = Vertices[face.VertexIndices[i]];
-                var v2 = Vertices[face.VertexIndices[i + 1]];
+                ref var v1 = ref Vertices[face.VertexIndices[i]];
+                ref var v2 = ref Vertices[face.VertexIndices[i + 1]];
                 volume += GeometryVertex.Dot(in v0, GeometryVertex.Cross(in v1, in v2));
             }
         }
@@ -62,16 +67,17 @@ public sealed class RoomGeometry
 
     public RoomGeometry CloneAndScale(float targetWidth, float targetHeight, float targetDepth)
     {
-        float curW = Vertices.Length > 0 ? Vertices.Max(v => v.X) : 1f;
-        float curH = Vertices.Length > 0 ? Vertices.Max(v => v.Y) : 1f;
-        float curD = Vertices.Length > 0 ? Vertices.Max(v => v.Z) : 1f;
+        var (_, maxX, _, maxY, _, maxZ) = GetBounds();
+        float curW = Vertices.Length > 0 ? maxX : 1f;
+        float curH = Vertices.Length > 0 ? maxY : 1f;
+        float curD = Vertices.Length > 0 ? maxZ : 1f;
         float sx = curW > 0.001f ? targetWidth / curW : 1f;
         float sy = curH > 0.001f ? targetHeight / curH : 1f;
         float sz = curD > 0.001f ? targetDepth / curD : 1f;
         var verts = new GeometryVertex[Vertices.Length];
         for (int i = 0; i < Vertices.Length; i++)
         {
-            var v = Vertices[i];
+            ref var v = ref Vertices[i];
             verts[i] = new GeometryVertex(v.X * sx, v.Y * sy, v.Z * sz);
         }
         return new RoomGeometry
@@ -79,11 +85,10 @@ public sealed class RoomGeometry
             Name = Name,
             ShapeId = ShapeId,
             Vertices = verts,
-            Faces = Faces.ToArray(),
-            Materials = Materials.ToArray()
+            Faces = [.. Faces.Select(f => f.DeepClone())],
+            Materials = [.. Materials.Select(m => m.Clone())]
         };
     }
-
 
     public float CalculateSurfaceArea()
     {
@@ -91,7 +96,7 @@ public sealed class RoomGeometry
         foreach (var face in Faces)
         {
             if (face.VertexIndices.Length < 3) continue;
-            var v0 = Vertices[face.VertexIndices[0]];
+            ref var v0 = ref Vertices[face.VertexIndices[0]];
             for (int i = 1; i < face.VertexIndices.Length - 1; i++)
             {
                 var e1 = Vertices[face.VertexIndices[i]].Subtract(in v0);
@@ -115,9 +120,9 @@ public sealed class RoomGeometry
     {
         Name = Name,
         ShapeId = ShapeId,
-        Vertices = Vertices.Select(v => v).ToArray(),
-        Faces = Faces.Select(f => f.Clone()).ToArray(),
-        Materials = Materials.Select(m => m.Clone()).ToArray()
+        Vertices = [.. Vertices],
+        Faces = [.. Faces.Select(f => f.DeepClone())],
+        Materials = [.. Materials.Select(m => m.Clone())]
     };
 
     public (float MinX, float MaxX, float MinY, float MaxY, float MinZ, float MaxZ) GetBounds()
@@ -135,20 +140,27 @@ public sealed class RoomGeometry
         return (minX, maxX, minY, maxY, minZ, maxZ);
     }
 
-    private bool IsPointInFaceXZProjection(in RoomFace face, float x, float z)
+    private bool IsPointInFaceXZProjection(RoomFace face, float x, float z)
     {
-        var verts = face.VertexIndices
-            .Where(vi => vi >= 0 && vi < Vertices.Length)
-            .Select(vi => Vertices[vi])
-            .ToArray();
-        if (verts.Length < 3) return false;
+        var indices = face.VertexIndices.AsSpan();
+        int n = indices.Length;
+        if (n < 3) return false;
+        
+        Span<int> validIndices = stackalloc int[n];
+        int count = 0;
+        foreach (int i in indices)
+            if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
+            
+        if (count < 3) return false;
+        
         bool inside = false;
-        int n = verts.Length;
-        int j = n - 1;
-        for (int i = 0; i < n; i++)
+        int j = count - 1;
+        for (int i = 0; i < count; i++)
         {
-            float xi = verts[i].X, zi = verts[i].Z;
-            float xj = verts[j].X, zj = verts[j].Z;
+            ref var vi = ref Vertices[validIndices[i]];
+            ref var vj = ref Vertices[validIndices[j]];
+            float xi = vi.X, zi = vi.Z;
+            float xj = vj.X, zj = vj.Z;
             if (((zi > z) != (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi))
                 inside = !inside;
             j = i;
@@ -156,14 +168,14 @@ public sealed class RoomGeometry
         return inside;
     }
 
-    private static float? GetFaceYAtXZ(in RoomFace face, GeometryVertex[] vertices, float x, float z)
+    private static float? GetFaceYAtXZ(RoomFace face, GeometryVertex[] vertices, float x, float z)
     {
         if (face.VertexIndices.Length < 3) return null;
         int i0 = face.VertexIndices[0];
         int i1 = face.VertexIndices[1];
         int i2 = face.VertexIndices[2];
         if (i0 >= vertices.Length || i1 >= vertices.Length || i2 >= vertices.Length) return null;
-        var v0 = vertices[i0]; var v1 = vertices[i1]; var v2 = vertices[i2];
+        ref var v0 = ref vertices[i0]; ref var v1 = ref vertices[i1]; ref var v2 = ref vertices[i2];
         var e1 = v1.Subtract(in v0);
         var e2 = v2.Subtract(in v0);
         var normal = GeometryVertex.Cross(in e1, in e2);
@@ -179,8 +191,8 @@ public sealed class RoomGeometry
         float maxY = fallbackMax;
         foreach (var face in Faces)
         {
-            if (!IsPointInFaceXZProjection(in face, x, z)) continue;
-            float? fy = GetFaceYAtXZ(in face, Vertices, x, z);
+            if (!IsPointInFaceXZProjection(face, x, z)) continue;
+            float? fy = GetFaceYAtXZ(face, Vertices, x, z);
             if (fy is null) continue;
             float yv = fy.Value;
             float avgY = 0; int cnt = 0;
@@ -236,23 +248,7 @@ public sealed class RoomGeometry
         if (Faces.Length == 0 || Vertices.Length == 0) return true;
         var floorFace = FindFloorFace();
         if (floorFace is null) return true;
-        var poly = floorFace.VertexIndices
-            .Where(vi => vi >= 0 && vi < Vertices.Length)
-            .Select(vi => Vertices[vi])
-            .ToArray();
-        if (poly.Length < 3) return true;
-        bool inside = false;
-        int n = poly.Length;
-        int j = n - 1;
-        for (int i = 0; i < n; i++)
-        {
-            float xi = poly[i].X, zi = poly[i].Z;
-            float xj = poly[j].X, zj = poly[j].Z;
-            if (((zi > z) != (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi))
-                inside = !inside;
-            j = i;
-        }
-        return inside;
+        return IsPointInFaceXZProjection(floorFace, x, z);
     }
 
     public (float X, float Z) ClampToPolygonXZ(float x, float z)
@@ -261,18 +257,24 @@ public sealed class RoomGeometry
         if (IsPointInsideXZ(x, z)) return (x, z);
         var floorFace = FindFloorFace();
         if (floorFace is null) return (x, z);
-        var poly = floorFace.VertexIndices
-            .Where(vi => vi >= 0 && vi < Vertices.Length)
-            .Select(vi => Vertices[vi])
-            .ToArray();
-        if (poly.Length < 3) return (x, z);
+        
+        var indices = floorFace.VertexIndices.AsSpan();
+        Span<int> validIndices = stackalloc int[indices.Length];
+        int count = 0;
+        foreach (int i in indices)
+            if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
+            
+        if (count < 3) return (x, z);
+        
         float minDistSq = float.MaxValue;
         float bestX = x, bestZ = z;
-        for (int i = 0; i < poly.Length; i++)
+        for (int i = 0; i < count; i++)
         {
-            int j = (i + 1) % poly.Length;
-            float x1 = poly[i].X, z1 = poly[i].Z;
-            float x2 = poly[j].X, z2 = poly[j].Z;
+            int j = (i + 1) % count;
+            ref var v1 = ref Vertices[validIndices[i]];
+            ref var v2 = ref Vertices[validIndices[j]];
+            float x1 = v1.X, z1 = v1.Z;
+            float x2 = v2.X, z2 = v2.Z;
             float dx = x2 - x1, dz = z2 - z1;
             float lenSq = dx * dx + dz * dz;
             float px = x1, pz = z1;
@@ -298,11 +300,14 @@ public sealed class RoomGeometry
         if (Faces.Length == 0 || Vertices.Length == 0) return (endX, endZ);
         var floorFace = FindFloorFace();
         if (floorFace is null) return (endX, endZ);
-        var poly = floorFace.VertexIndices
-            .Where(vi => vi >= 0 && vi < Vertices.Length)
-            .Select(vi => Vertices[vi])
-            .ToArray();
-        if (poly.Length < 3) return (endX, endZ);
+        
+        var indices = floorFace.VertexIndices.AsSpan();
+        Span<int> validIndices = stackalloc int[indices.Length];
+        int count = 0;
+        foreach (int i in indices)
+            if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
+            
+        if (count < 3) return (endX, endZ);
 
         float dx = endX - startX;
         float dz = endZ - startZ;
@@ -311,11 +316,13 @@ public sealed class RoomGeometry
         float closestU = 1.0f;
         bool hit = false;
 
-        for (int i = 0; i < poly.Length; i++)
+        for (int i = 0; i < count; i++)
         {
-            int j = (i + 1) % poly.Length;
-            float x1 = poly[i].X, z1 = poly[i].Z;
-            float x2 = poly[j].X, z2 = poly[j].Z;
+            int j = (i + 1) % count;
+            ref var p1 = ref Vertices[validIndices[i]];
+            ref var p2 = ref Vertices[validIndices[j]];
+            float x1 = p1.X, z1 = p1.Z;
+            float x2 = p2.X, z2 = p2.Z;
 
             float ex = x2 - x1;
             float ez = z2 - z1;
@@ -342,11 +349,13 @@ public sealed class RoomGeometry
                     bool isValid = IsPointInsideXZ(testX, testZ);
                     if (!isValid)
                     {
-                        for (int k = 0; k < poly.Length; k++)
+                        for (int k = 0; k < count; k++)
                         {
-                            int l = (k + 1) % poly.Length;
-                            float bx1 = poly[k].X, bz1 = poly[k].Z;
-                            float bx2 = poly[l].X, bz2 = poly[l].Z;
+                            int l = (k + 1) % count;
+                            ref var b1 = ref Vertices[validIndices[k]];
+                            ref var b2 = ref Vertices[validIndices[l]];
+                            float bx1 = b1.X, bz1 = b1.Z;
+                            float bx2 = b2.X, bz2 = b2.Z;
                             float bdx = bx2 - bx1;
                             float bdz = bz2 - bz1;
                             float lenSq = bdx * bdx + bdz * bdz;

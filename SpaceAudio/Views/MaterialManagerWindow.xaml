@@ -88,6 +88,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static localization:Texts.MaterialName}"
                        VerticalAlignment="Center" Margin="0,0,8,6"/>
@@ -103,7 +104,11 @@
             <c:TextBoxSlider Grid.Row="1" Grid.Column="1"
                              Value="{Binding NewAbsorptionDouble, Mode=TwoWay}"
                              Min="0" Max="1" Delta="0.01" StringFormat="P0" Unit=""
-                             Margin="0,2"/>
+                             Margin="0,2,0,6"/>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="色"
+                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <c:ColorPicker Grid.Row="2" Grid.Column="1" Value="{Binding NewColor, Mode=TwoWay}"
+                           Height="15" HorizontalAlignment="Stretch" Margin="0,2"/>
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">

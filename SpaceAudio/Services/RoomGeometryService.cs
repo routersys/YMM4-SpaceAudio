@@ -8,13 +8,11 @@ using System.Text;
 
 namespace SpaceAudio.Services;
 
-public sealed class RoomGeometryService : IRoomGeometryService
+internal sealed class RoomGeometryService : FileBackedServiceBase, IRoomGeometryService
 {
     private const string Extension = ".srg";
     private readonly string _dir;
     private readonly IUserNotificationService _notifications;
-    private readonly Lock _lock = new();
-    private volatile bool _initialized;
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
@@ -31,34 +29,35 @@ public sealed class RoomGeometryService : IRoomGeometryService
         _dir = Path.Combine(assemblyDir, "geometries");
     }
 
+    protected override string DirectoryPath => _dir;
+
     public IReadOnlyList<string> GetAllIds()
     {
-        EnsureInit();
+        EnsureInitialized();
         if (!Directory.Exists(_dir)) return [];
-        return Directory.GetFiles(_dir, "*" + Extension)
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where(n => n is not null)
-            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-            .ToList()!;
+        return [.. Directory.GetFiles(_dir, "*" + Extension)
+            .Select(p => Path.GetFileNameWithoutExtension(p)!)
+            .Order(StringComparer.OrdinalIgnoreCase)];
     }
 
     public RoomGeometry? Load(string id)
     {
-        EnsureInit();
-        string path = FilePath(id);
-        byte[]? data = AtomicFileOperations.ReadWithFallback(path);
+        EnsureInitialized();
+        byte[]? data = AtomicFileOperations.ReadWithFallback(FilePath(id));
         if (data is null) return null;
         try
         {
             string json = Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RoomGeometry>(json, JsonSettings);
         }
-        catch { return null; }
+        catch (JsonException) { return null; }
+        catch (DecoderFallbackException) { return null; }
     }
 
     public bool Save(RoomGeometry geometry)
     {
-        EnsureInit();
+        ArgumentNullException.ThrowIfNull(geometry);
+        EnsureInitialized();
         if (string.IsNullOrWhiteSpace(geometry.ShapeId)) return false;
         try
         {
@@ -68,36 +67,31 @@ public sealed class RoomGeometryService : IRoomGeometryService
             GeometriesChanged?.Invoke(this, EventArgs.Empty);
             return true;
         }
-        catch { return false; }
+        catch (IOException) { return false; }
+        catch (JsonException) { return false; }
     }
 
     public void Delete(string id)
     {
-        EnsureInit();
+        EnsureInitialized();
         string path = FilePath(id);
         if (!File.Exists(path)) return;
         try { File.Delete(path); }
-        catch { return; }
+        catch (IOException) { return; }
         GeometriesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public bool Rename(string oldId, string newId)
     {
-        EnsureInit();
+        EnsureInitialized();
         if (string.IsNullOrWhiteSpace(newId)) return false;
         string oldPath = FilePath(oldId);
         string newPath = FilePath(newId);
         if (File.Exists(newPath) || !File.Exists(oldPath)) return false;
         try { File.Move(oldPath, newPath); }
-        catch { return false; }
+        catch (IOException) { return false; }
         GeometriesChanged?.Invoke(this, EventArgs.Empty);
         return true;
-    }
-
-    private void EnsureInit()
-    {
-        if (_initialized) return;
-        lock (_lock) { if (_initialized) return; Directory.CreateDirectory(_dir); _initialized = true; }
     }
 
     private string FilePath(string id) => Path.Combine(_dir, id + Extension);

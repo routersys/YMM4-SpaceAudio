@@ -12,6 +12,7 @@ internal sealed class RingBuffer
 
     public RingBuffer(int sizeInPowerOfTwo)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(sizeInPowerOfTwo, 1);
         int size = 1;
         while (size < sizeInPowerOfTwo) size <<= 1;
         _buffer = new float[size];
@@ -26,11 +27,8 @@ internal sealed class RingBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float Read(int delaySamples)
-    {
-        int readPos = (_writePos - delaySamples) & _mask;
-        return _buffer[readPos];
-    }
+    public float Read(int delaySamples) =>
+        _buffer[(_writePos - delaySamples) & _mask];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ReadInterpolated(float delaySamples)

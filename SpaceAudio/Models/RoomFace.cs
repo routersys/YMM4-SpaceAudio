@@ -1,6 +1,6 @@
 ﻿namespace SpaceAudio.Models;
 
-public sealed class RoomFace
+public sealed record RoomFace
 {
     public int[] VertexIndices { get; set; } = [];
     public int MaterialIndex { get; set; }
@@ -13,9 +13,5 @@ public sealed class RoomFace
         MaterialIndex = materialIndex;
     }
 
-    public RoomFace Clone() => new()
-    {
-        VertexIndices = (int[])VertexIndices.Clone(),
-        MaterialIndex = MaterialIndex
-    };
+    public RoomFace DeepClone() => this with { VertexIndices = (int[])VertexIndices.Clone() };
 }
