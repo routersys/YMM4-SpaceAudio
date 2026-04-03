@@ -159,8 +159,16 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
                 {
                     double vx = i < animX.Values.Count ? animX.Values[i].Value : animX.Values[0].Value;
                     double vz = i < animZ.Values.Count ? animZ.Values[i].Value : animZ.Values[0].Value;
+                    double vy = i < animY.Values.Count ? animY.Values[i].Value : (animY.Values.Count > 0 ? animY.Values[0].Value : 0);
 
                     (float newX, float newZ) = geo.RayCastXZ(lastX, lastZ, (float)vx, (float)vz);
+
+                    float tmpX = newX;
+                    float tmpY = (float)vy;
+                    float tmpZ = newZ;
+                    ConstrainToHeight(geo, rh, ref tmpX, ref tmpY, ref tmpZ, lastX, lastZ);
+                    newX = tmpX;
+                    newZ = tmpZ;
 
                     if (i < animX.Values.Count && (float)vx != newX) animX.Values[i].Value = newX;
                     if (i < animZ.Values.Count && (float)vz != newZ) animZ.Values[i].Value = newZ;
@@ -168,9 +176,9 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
                     if (i < animY.Values.Count)
                     {
                         var (yMin, yMax) = geo.GetYBoundsAtXZ(newX, newZ, 0, rh);
-                        double vy = animY.Values[i].Value;
-                        if (vy < yMin) animY.Values[i].Value = yMin;
-                        else if (vy > yMax) animY.Values[i].Value = yMax;
+                        double currentVy = animY.Values[i].Value;
+                        if (currentVy < yMin) animY.Values[i].Value = yMin;
+                        else if (currentVy > yMax) animY.Values[i].Value = yMax;
                     }
 
                     if (i == 0)
@@ -195,6 +203,34 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
 
         ClampValues(_effect.SourceX, _effect.SourceY, _effect.SourceZ, ref _lastSx, ref _lastSz);
         ClampValues(_effect.ListenerX, _effect.ListenerY, _effect.ListenerZ, ref _lastLx, ref _lastLz);
+    }
+
+    private static void ConstrainToHeight(RoomGeometry geo, float rh, ref float nx, ref float ny, ref float nz, float startX, float startZ)
+    {
+        float targetX = nx;
+        float targetZ = nz;
+        float validX = startX;
+        float validZ = startZ;
+        for (int step = 0; step < 20; step++)
+        {
+            float midX = (validX + targetX) * 0.5f;
+            float midZ = (validZ + targetZ) * 0.5f;
+            var (min, max) = geo.GetYBoundsAtXZ(midX, midZ, 0, rh);
+            if (ny >= min && ny <= max)
+            {
+                validX = midX;
+                validZ = midZ;
+            }
+            else
+            {
+                targetX = midX;
+                targetZ = midZ;
+            }
+        }
+        nx = validX;
+        nz = validZ;
+        var (fMin, fMax) = geo.GetYBoundsAtXZ(nx, nz, 0, rh);
+        ny = Math.Clamp(ny, fMin, fMax);
     }
 
     private void DrawAll()
@@ -309,8 +345,7 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
                     var clamped = geo.ClampToPolygonXZ(nx, nz);
                     nx = clamped.X;
                     nz = clamped.Z;
-                    var (yMin, yMax) = geo.GetYBoundsAtXZ(nx, nz, 0, _effect.RoomHeightValue);
-                    ny = Math.Clamp(ny, yMin, yMax);
+                    ConstrainToHeight(geo, _effect.RoomHeightValue, ref nx, ref ny, ref nz, _effect.SourceXValue, _effect.SourceZValue);
                 }
                 _effect.SourceXValue = nx;
                 _effect.SourceYValue = ny;
@@ -327,8 +362,7 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
                     var clamped = geo.ClampToPolygonXZ(nx, nz);
                     nx = clamped.X;
                     nz = clamped.Z;
-                    var (yMin, yMax) = geo.GetYBoundsAtXZ(nx, nz, 0, _effect.RoomHeightValue);
-                    ny = Math.Clamp(ny, yMin, yMax);
+                    ConstrainToHeight(geo, _effect.RoomHeightValue, ref nx, ref ny, ref nz, _effect.ListenerXValue, _effect.ListenerZValue);
                 }
                 _effect.ListenerXValue = nx;
                 _effect.ListenerYValue = ny;
@@ -361,10 +395,13 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
         InteractionCanvas.ReleaseMouseCapture();
     }
 
+    private Point _rightClickStartPos;
+
     private void Canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         _isRightDragging = true;
         _lastMousePos = e.GetPosition(InteractionCanvas);
+        _rightClickStartPos = _lastMousePos;
         InteractionCanvas.CaptureMouse();
     }
 
@@ -373,10 +410,11 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
         _isRightDragging = false;
         InteractionCanvas.ReleaseMouseCapture();
 
-        if (Math.Abs(e.GetPosition(InteractionCanvas).X - _lastMousePos.X) < 3 &&
-            Math.Abs(e.GetPosition(InteractionCanvas).Y - _lastMousePos.Y) < 3)
+        var currentPos = e.GetPosition(InteractionCanvas);
+        if (Math.Abs(currentPos.X - _rightClickStartPos.X) < 3 &&
+            Math.Abs(currentPos.Y - _rightClickStartPos.Y) < 3)
         {
-            ShowContextMenu(e.GetPosition(InteractionCanvas));
+            ShowContextMenu(currentPos);
         }
     }
 

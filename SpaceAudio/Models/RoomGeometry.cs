@@ -167,6 +167,28 @@ public sealed class RoomGeometry
 
         if (count < 3) return false;
 
+        if (count == 4)
+        {
+            ref var v0 = ref Vertices[validIndices[0]];
+            for (int i = 1; i < count - 1; i++)
+            {
+                ref var v1 = ref Vertices[validIndices[i]];
+                ref var v2 = ref Vertices[validIndices[i + 1]];
+                float x1 = v0.X, z1 = v0.Z;
+                float x2 = v1.X, z2 = v1.Z;
+                float x3 = v2.X, z3 = v2.Z;
+                float denom = (z2 - z3) * (x1 - x3) + (x3 - x2) * (z1 - z3);
+                if (MathF.Abs(denom) >= 1e-6f)
+                {
+                    float a = ((z2 - z3) * (x - x3) + (x3 - x2) * (z - z3)) / denom;
+                    float b = ((z3 - z1) * (x - x3) + (x1 - x3) * (z - z3)) / denom;
+                    float c = 1 - a - b;
+                    if (a >= -0.001f && b >= -0.001f && c >= -0.001f) return true;
+                }
+            }
+            return false;
+        }
+
         bool inside = false;
         int j = count - 1;
         for (int i = 0; i < count; i++)
@@ -182,20 +204,53 @@ public sealed class RoomGeometry
         return inside;
     }
 
-    private static float? GetFaceYAtXZ(RoomFace face, GeometryVertex[] vertices, float x, float z)
+    private static (float Y, float NormalY)? GetFaceYAtXZ(RoomFace face, GeometryVertex[] vertices, float x, float z)
     {
         if (face.VertexIndices.Length < 3) return null;
+        int n = face.VertexIndices.Length;
         int i0 = face.VertexIndices[0];
-        int i1 = face.VertexIndices[1];
-        int i2 = face.VertexIndices[2];
-        if (i0 >= vertices.Length || i1 >= vertices.Length || i2 >= vertices.Length) return null;
-        ref var v0 = ref vertices[i0]; ref var v1 = ref vertices[i1]; ref var v2 = ref vertices[i2];
-        var e1 = v1.Subtract(in v0);
-        var e2 = v2.Subtract(in v0);
-        var normal = GeometryVertex.Cross(in e1, in e2);
-        if (MathF.Abs(normal.Y) < 1e-6f) return null;
-        float d = -(normal.X * v0.X + normal.Y * v0.Y + normal.Z * v0.Z);
-        return -(normal.X * x + normal.Z * z + d) / normal.Y;
+        if (i0 >= vertices.Length) return null;
+        ref var v0 = ref vertices[i0];
+        float bestScore = float.MaxValue;
+        float bestY = 0;
+        float bestNY = 0;
+        bool found = false;
+        for (int i = 1; i < n - 1; i++)
+        {
+            int i1 = face.VertexIndices[i];
+            int i2 = face.VertexIndices[i + 1];
+            if (i1 >= vertices.Length || i2 >= vertices.Length) continue;
+            ref var v1 = ref vertices[i1];
+            ref var v2 = ref vertices[i2];
+            float x1 = v0.X, z1 = v0.Z;
+            float x2 = v1.X, z2 = v1.Z;
+            float x3 = v2.X, z3 = v2.Z;
+            float denom = (z2 - z3) * (x1 - x3) + (x3 - x2) * (z1 - z3);
+            if (MathF.Abs(denom) < 1e-6f) continue;
+            float a = ((z2 - z3) * (x - x3) + (x3 - x2) * (z - z3)) / denom;
+            float b = ((z3 - z1) * (x - x3) + (x1 - x3) * (z - z3)) / denom;
+            float c = 1 - a - b;
+            float score = 0;
+            if (a < 0) score -= a;
+            if (b < 0) score -= b;
+            if (c < 0) score -= c;
+            if (!found || score < bestScore)
+            {
+                var e1 = v1.Subtract(in v0);
+                var e2 = v2.Subtract(in v0);
+                var normal = GeometryVertex.Cross(in e1, in e2);
+                if (MathF.Abs(normal.Y) >= 1e-6f)
+                {
+                    float d = -(normal.X * v0.X + normal.Y * v0.Y + normal.Z * v0.Z);
+                    bestY = -(normal.X * x + normal.Z * z + d) / normal.Y;
+                    bestNY = normal.Y;
+                    bestScore = score;
+                    found = true;
+                }
+            }
+        }
+        if (found) return (bestY, bestNY);
+        return null;
     }
 
     public (float MinY, float MaxY) GetYBoundsAtXZ(float x, float z, float fallbackMin, float fallbackMax)
@@ -203,24 +258,35 @@ public sealed class RoomGeometry
         if (Faces.Length == 0 || Vertices.Length == 0) return (fallbackMin, fallbackMax);
         float minY = fallbackMin;
         float maxY = fallbackMax;
+        bool hasMin = false;
+        bool hasMax = false;
+        float preciseMinY = float.MinValue;
+        float preciseMaxY = float.MaxValue;
         foreach (var face in Faces)
         {
             if (!IsPointInFaceXZProjection(face, x, z)) continue;
-            float? fy = GetFaceYAtXZ(face, Vertices, x, z);
-            if (fy is null) continue;
-            float yv = fy.Value;
-            float avgY = 0; int cnt = 0;
-            foreach (var vi in face.VertexIndices)
+            var fyNormal = GetFaceYAtXZ(face, Vertices, x, z);
+            if (fyNormal is null) continue;
+            float yv = fyNormal.Value.Y;
+            float ny = fyNormal.Value.NormalY;
+            if (ny > 0)
             {
-                if (vi >= 0 && vi < Vertices.Length) { avgY += Vertices[vi].Y; cnt++; }
+                if (!hasMin || yv > preciseMinY) preciseMinY = yv;
+                hasMin = true;
             }
-            if (cnt == 0) continue;
-            avgY /= cnt;
-            float midY = (fallbackMin + fallbackMax) * 0.5f;
-            if (avgY <= midY)
-                minY = MathF.Max(minY, yv);
             else
-                maxY = MathF.Min(maxY, yv);
+            {
+                if (!hasMax || yv < preciseMaxY) preciseMaxY = yv;
+                hasMax = true;
+            }
+        }
+        if (hasMin) minY = preciseMinY;
+        if (hasMax) maxY = preciseMaxY;
+        if (minY > maxY)
+        {
+            float t = minY;
+            minY = maxY;
+            maxY = t;
         }
         return (minY, maxY);
     }
@@ -228,27 +294,25 @@ public sealed class RoomGeometry
     private RoomFace? FindFloorFace()
     {
         RoomFace? floorFace = null;
-        float minAvgY = float.MaxValue;
+        float maxNormalY = -float.MaxValue;
         foreach (var face in Faces)
         {
             if (face.VertexIndices.Length >= 3)
             {
-                float avgY = 0;
-                int count = 0;
-                foreach (var vi in face.VertexIndices)
+                int i0 = face.VertexIndices[0];
+                int i1 = face.VertexIndices[1];
+                int i2 = face.VertexIndices[2];
+                if (i0 < Vertices.Length && i1 < Vertices.Length && i2 < Vertices.Length)
                 {
-                    if (vi >= 0 && vi < Vertices.Length)
+                    ref var v0 = ref Vertices[i0];
+                    ref var v1 = ref Vertices[i1];
+                    ref var v2 = ref Vertices[i2];
+                    var e1 = v1.Subtract(in v0);
+                    var e2 = v2.Subtract(in v0);
+                    var normal = GeometryVertex.Cross(in e1, in e2);
+                    if (normal.Y > maxNormalY)
                     {
-                        avgY += Vertices[vi].Y;
-                        count++;
-                    }
-                }
-                if (count > 0)
-                {
-                    avgY /= count;
-                    if (avgY < minAvgY)
-                    {
-                        minAvgY = avgY;
+                        maxNormalY = normal.Y;
                         floorFace = face;
                     }
                 }
@@ -260,50 +324,58 @@ public sealed class RoomGeometry
     public bool IsPointInsideXZ(float x, float z)
     {
         if (Faces.Length == 0 || Vertices.Length == 0) return true;
-        var floorFace = FindFloorFace();
-        if (floorFace is null) return true;
-        return IsPointInFaceXZProjection(floorFace, x, z);
+        foreach (var face in Faces)
+        {
+            if (IsPointInFaceXZProjection(face, x, z))
+                return true;
+        }
+        return false;
     }
 
     public (float X, float Z) ClampToPolygonXZ(float x, float z)
     {
         if (Faces.Length == 0 || Vertices.Length == 0) return (x, z);
         if (IsPointInsideXZ(x, z)) return (x, z);
-        var floorFace = FindFloorFace();
-        if (floorFace is null) return (x, z);
-
-        var indices = floorFace.VertexIndices.AsSpan();
-        Span<int> validIndices = stackalloc int[indices.Length];
-        int count = 0;
-        foreach (int i in indices)
-            if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
-
-        if (count < 3) return (x, z);
 
         float minDistSq = float.MaxValue;
         float bestX = x, bestZ = z;
-        for (int i = 0; i < count; i++)
+
+        foreach (var face in Faces)
         {
-            int j = (i + 1) % count;
-            ref var v1 = ref Vertices[validIndices[i]];
-            ref var v2 = ref Vertices[validIndices[j]];
-            float x1 = v1.X, z1 = v1.Z;
-            float x2 = v2.X, z2 = v2.Z;
-            float dx = x2 - x1, dz = z2 - z1;
-            float lenSq = dx * dx + dz * dz;
-            float px = x1, pz = z1;
-            if (lenSq > 0.000001f)
+            var indices = face.VertexIndices.AsSpan();
+            int n = indices.Length;
+            if (n < 3) continue;
+
+            Span<int> validIndices = stackalloc int[n];
+            int count = 0;
+            foreach (int i in indices)
+                if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
+
+            if (count < 3) continue;
+
+            for (int i = 0; i < count; i++)
             {
-                float t = ((x - x1) * dx + (z - z1) * dz) / lenSq;
-                if (t >= 1f) { px = x2; pz = z2; }
-                else if (t > 0f) { px = x1 + t * dx; pz = z1 + t * dz; }
-            }
-            float distSq = (x - px) * (x - px) + (z - pz) * (z - pz);
-            if (distSq < minDistSq)
-            {
-                minDistSq = distSq;
-                bestX = px;
-                bestZ = pz;
+                int j = (i + 1) % count;
+                ref var v1 = ref Vertices[validIndices[i]];
+                ref var v2 = ref Vertices[validIndices[j]];
+                float x1 = v1.X, z1 = v1.Z;
+                float x2 = v2.X, z2 = v2.Z;
+                float dx = x2 - x1, dz = z2 - z1;
+                float lenSq = dx * dx + dz * dz;
+                float px = x1, pz = z1;
+                if (lenSq > 0.000001f)
+                {
+                    float t = ((x - x1) * dx + (z - z1) * dz) / lenSq;
+                    if (t >= 1f) { px = x2; pz = z2; }
+                    else if (t > 0f) { px = x1 + t * dx; pz = z1 + t * dz; }
+                }
+                float distSq = (x - px) * (x - px) + (z - pz) * (z - pz);
+                if (distSq < minDistSq)
+                {
+                    minDistSq = distSq;
+                    bestX = px;
+                    bestZ = pz;
+                }
             }
         }
         return (bestX, bestZ);
@@ -312,16 +384,6 @@ public sealed class RoomGeometry
     public (float X, float Z) RayCastXZ(float startX, float startZ, float endX, float endZ)
     {
         if (Faces.Length == 0 || Vertices.Length == 0) return (endX, endZ);
-        var floorFace = FindFloorFace();
-        if (floorFace is null) return (endX, endZ);
-
-        var indices = floorFace.VertexIndices.AsSpan();
-        Span<int> validIndices = stackalloc int[indices.Length];
-        int count = 0;
-        foreach (int i in indices)
-            if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
-
-        if (count < 3) return (endX, endZ);
 
         float dx = endX - startX;
         float dz = endZ - startZ;
@@ -330,67 +392,93 @@ public sealed class RoomGeometry
         float closestU = 1.0f;
         bool hit = false;
 
-        for (int i = 0; i < count; i++)
+        foreach (var face in Faces)
         {
-            int j = (i + 1) % count;
-            ref var p1 = ref Vertices[validIndices[i]];
-            ref var p2 = ref Vertices[validIndices[j]];
-            float x1 = p1.X, z1 = p1.Z;
-            float x2 = p2.X, z2 = p2.Z;
+            var indices = face.VertexIndices.AsSpan();
+            int n = indices.Length;
+            if (n < 3) continue;
 
-            float ex = x2 - x1;
-            float ez = z2 - z1;
-            float cx = x1 - startX;
-            float cz = z1 - startZ;
+            Span<int> validIndices = stackalloc int[n];
+            int count = 0;
+            foreach (int i in indices)
+                if (i >= 0 && i < Vertices.Length) validIndices[count++] = i;
 
-            float V = -dx * ez + dz * ex;
-            if (Math.Abs(V) < 0.000001f) continue;
+            if (count < 3) continue;
 
-            float uRay = (-cx * ez + cz * ex) / V;
-            float tWall = (dx * cz - dz * cx) / V;
-
-            if (uRay >= 0.0f && uRay <= closestU && tWall >= -0.0001f && tWall <= 1.0001f)
+            for (int i = 0; i < count; i++)
             {
-                float testDist = 0.01f;
-                float rLen = (float)Math.Sqrt(dx * dx + dz * dz);
-                if (rLen > 0.0001f)
-                {
-                    float stepX = (dx / rLen) * testDist;
-                    float stepZ = (dz / rLen) * testDist;
-                    float testX = startX + dx * uRay + stepX;
-                    float testZ = startZ + dz * uRay + stepZ;
+                int j = (i + 1) % count;
+                ref var p1 = ref Vertices[validIndices[i]];
+                ref var p2 = ref Vertices[validIndices[j]];
+                float x1 = p1.X, z1 = p1.Z;
+                float x2 = p2.X, z2 = p2.Z;
 
-                    bool isValid = IsPointInsideXZ(testX, testZ);
-                    if (!isValid)
+                float ex = x2 - x1;
+                float ez = z2 - z1;
+                float cx = x1 - startX;
+                float cz = z1 - startZ;
+
+                float V = -dx * ez + dz * ex;
+                if (Math.Abs(V) < 0.000001f) continue;
+
+                float uRay = (-cx * ez + cz * ex) / V;
+                float tWall = (dx * cz - dz * cx) / V;
+
+                if (uRay >= 0.0f && uRay <= closestU && tWall >= -0.0001f && tWall <= 1.0001f)
+                {
+                    float testDist = 0.01f;
+                    float rLen = (float)Math.Sqrt(dx * dx + dz * dz);
+                    if (rLen > 0.0001f)
                     {
-                        for (int k = 0; k < count; k++)
+                        float stepX = (dx / rLen) * testDist;
+                        float stepZ = (dz / rLen) * testDist;
+                        float testX = startX + dx * uRay + stepX;
+                        float testZ = startZ + dz * uRay + stepZ;
+
+                        bool isValid = IsPointInsideXZ(testX, testZ);
+                        if (!isValid)
                         {
-                            int l = (k + 1) % count;
-                            ref var b1 = ref Vertices[validIndices[k]];
-                            ref var b2 = ref Vertices[validIndices[l]];
-                            float bx1 = b1.X, bz1 = b1.Z;
-                            float bx2 = b2.X, bz2 = b2.Z;
-                            float bdx = bx2 - bx1;
-                            float bdz = bz2 - bz1;
-                            float lenSq = bdx * bdx + bdz * bdz;
-                            if (lenSq < 0.0001f) continue;
-                            float t = ((testX - bx1) * bdx + (testZ - bz1) * bdz) / lenSq;
-                            t = Math.Max(0, Math.Min(1, t));
-                            float px = bx1 + t * bdx;
-                            float pz = bz1 + t * bdz;
-                            float distSq = (testX - px) * (testX - px) + (testZ - pz) * (testZ - pz);
-                            if (distSq < 0.000001f)
+                            foreach (var chkFace in Faces)
                             {
-                                isValid = true;
-                                break;
+                                var cIndices = chkFace.VertexIndices.AsSpan();
+                                int cn = cIndices.Length;
+                                if (cn < 3) continue;
+                                Span<int> cValid = stackalloc int[cn];
+                                int cCount = 0;
+                                foreach (int ci in cIndices)
+                                    if (ci >= 0 && ci < Vertices.Length) cValid[cCount++] = ci;
+                                if (cCount < 3) continue;
+                                for (int k = 0; k < cCount; k++)
+                                {
+                                    int l = (k + 1) % cCount;
+                                    ref var b1 = ref Vertices[cValid[k]];
+                                    ref var b2 = ref Vertices[cValid[l]];
+                                    float bx1 = b1.X, bz1 = b1.Z;
+                                    float bx2 = b2.X, bz2 = b2.Z;
+                                    float bdx = bx2 - bx1;
+                                    float bdz = bz2 - bz1;
+                                    float lenSq = bdx * bdx + bdz * bdz;
+                                    if (lenSq < 0.0001f) continue;
+                                    float t = ((testX - bx1) * bdx + (testZ - bz1) * bdz) / lenSq;
+                                    t = Math.Max(0, Math.Min(1, t));
+                                    float px = bx1 + t * bdx;
+                                    float pz = bz1 + t * bdz;
+                                    float distSq = (testX - px) * (testX - px) + (testZ - pz) * (testZ - pz);
+                                    if (distSq < 0.000001f)
+                                    {
+                                        isValid = true;
+                                        break;
+                                    }
+                                }
+                                if (isValid) break;
                             }
                         }
+                        if (isValid) continue;
                     }
-                    if (isValid) continue;
-                }
 
-                closestU = uRay;
-                hit = true;
+                    closestU = uRay;
+                    hit = true;
+                }
             }
         }
 
