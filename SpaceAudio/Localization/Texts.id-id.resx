@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>Tambah Verteks</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>Hapus Verteks</value></data>
 <data name="AddFace" xml:space="preserve"><value>Tambah Permukaan</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>Ekspor Gambar Cetak Biru</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>Impor dari Gambar Cetak Biru</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>Tidak ada data cetak biru di dalam gambar.</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>DENAH</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>TAMPAK DEPAN</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>TAMPAK SAMPING</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>NAMA PROYEK</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>TANGGAL</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(Tanpa Nama)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>Sistem Cetak Biru SpaceAudio</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>Hapus Permukaan</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>Simpan Geometri</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>Simpan Geometri</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>Tambah Material</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>Perbarui</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>Hapus material ""{0}""?</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● Biru = dipilih</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● Kuning = verteks wajah</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>Koordinat verteks dipilih</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>Wajah menggunakan verteks:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>Seret: Putar</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>Seret kanan: Geser</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>Gulir: Zoom</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>Preset Bentuk</value></data>
+<data name="PresetBox" xml:space="preserve"><value>Kotak</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>Bentuk L</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>Katedral</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>Studio</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>Bentuk T</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>Bentuk U</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z: Kunci Sumbu</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>Verteks</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>Permukaan</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>Verteks Permukaan</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>Pindah Ke Atas</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>Pindah Ke Bawah</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>Material</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>Klik: Pilih</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>Seret: Pindah</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl: Alihkan</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>Tampilkan Grid</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>Tampilkan Dimensi</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>Batalkan</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>Ulangi</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>Lantai</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>Langit-langit</value></data>
+<data name="WallLabel" xml:space="preserve"><value>Dinding</value></data>
 </root>

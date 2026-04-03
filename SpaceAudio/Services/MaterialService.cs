@@ -2,6 +2,7 @@
 using SpaceAudio.Enums;
 using SpaceAudio.Infrastructure;
 using SpaceAudio.Interfaces;
+using SpaceAudio.Localization;
 using SpaceAudio.Models;
 using System.IO;
 using System.Reflection;
@@ -38,20 +39,17 @@ public sealed class MaterialService : IMaterialService
         lock (_lock) return [.. GetBuiltIn(), .. (_cache ?? [])];
     }
 
-    public IReadOnlyList<CustomMaterial> GetBuiltIn()
-    {
-        return
-        [
-            new("concrete", "Concrete", MaterialCoefficients.GetAbsorption(WallMaterial.Concrete), true),
-            new("wood", "Wood", MaterialCoefficients.GetAbsorption(WallMaterial.Wood), true),
-            new("glass", "Glass", MaterialCoefficients.GetAbsorption(WallMaterial.Glass), true),
-            new("carpet", "Carpet", MaterialCoefficients.GetAbsorption(WallMaterial.Carpet), true),
-            new("acoustic", "Acoustic Panel", MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel), true),
-            new("brick", "Brick", MaterialCoefficients.GetAbsorption(WallMaterial.Brick), true),
-            new("drywall", "Drywall", MaterialCoefficients.GetAbsorption(WallMaterial.Drywall), true),
-            new("tile", "Tile", MaterialCoefficients.GetAbsorption(WallMaterial.Tile), true)
-        ];
-    }
+    public IReadOnlyList<CustomMaterial> GetBuiltIn() =>
+    [
+        new("concrete", Texts.MaterialConcrete, MaterialCoefficients.GetAbsorption(WallMaterial.Concrete), true),
+        new("wood", Texts.MaterialWood, MaterialCoefficients.GetAbsorption(WallMaterial.Wood), true),
+        new("glass", Texts.MaterialGlass, MaterialCoefficients.GetAbsorption(WallMaterial.Glass), true),
+        new("carpet", Texts.MaterialCarpet, MaterialCoefficients.GetAbsorption(WallMaterial.Carpet), true),
+        new("acoustic", Texts.MaterialAcousticPanel, MaterialCoefficients.GetAbsorption(WallMaterial.AcousticPanel), true),
+        new("brick", Texts.MaterialBrick, MaterialCoefficients.GetAbsorption(WallMaterial.Brick), true),
+        new("drywall", Texts.MaterialDrywall, MaterialCoefficients.GetAbsorption(WallMaterial.Drywall), true),
+        new("tile", Texts.MaterialTile, MaterialCoefficients.GetAbsorption(WallMaterial.Tile), true)
+    ];
 
     public CustomMaterial? GetById(string id)
     {

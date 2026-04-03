@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>添加顶点</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>删除顶点</value></data>
 <data name="AddFace" xml:space="preserve"><value>添加面</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>导出蓝图图像</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>从蓝图图像导入</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>图像中未找到蓝图数据。</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>平面图</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>正视图</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>侧视图</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>项目名称</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>创建日期</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(未命名)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>SpaceAudio 蓝图输出系统</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>删除面</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>保存几何体</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>保存几何体</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>添加材质</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>更新</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>确定删除材质「{0}」？</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● 蓝=已选</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● 黄=面顶点</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>所选顶点坐标</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>面使用的顶点:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>拖动: 旋转</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>右键拖动: 平移</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>滚轮: 缩放</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>形状预设</value></data>
+<data name="PresetBox" xml:space="preserve"><value>方形</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>L形</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>大教堂</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>录音室</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>T形</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>U形</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z:锁轴</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>顶点</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>面</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>面的顶点</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>上移</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>下移</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>面材质</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>点击: 选择</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>拖动: 移动</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl:切换面</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>网格</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>尺寸</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>撤销</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>重做</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>地板</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>天花板</value></data>
+<data name="WallLabel" xml:space="preserve"><value>墙壁</value></data>
 </root>

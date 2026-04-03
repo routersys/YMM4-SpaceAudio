@@ -1,8 +1,7 @@
 ﻿using SpaceAudio.Enums;
 using SpaceAudio.Interfaces;
-using SpaceAudio.Views;
 
-namespace SpaceAudio.Services;
+namespace SpaceAudio.Views;
 
 public sealed class WpfToastPresenter : IToastPresenter
 {

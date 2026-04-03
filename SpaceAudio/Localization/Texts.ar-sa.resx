@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>إضافة رأس</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>إزالة رأس</value></data>
 <data name="AddFace" xml:space="preserve"><value>إضافة وجه</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>تصدير صورة المخطط</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>استيراد من صورة المخطط</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>لم يتم العثور على بيانات المخطط في الصورة.</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>مخطط</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>الجبهة</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>الجانب</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>اسم المشروع</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>تاريخ</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(بدون اسم)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>نظام مخططات SpaceAudio</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>إزالة وجه</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>حفظ الهندسة</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>حفظ الهندسة</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>إضافة مادة</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>تحديث</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>هل تريد حذف المادة ""{0}""؟</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● أزرق = محدد</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● أصفر = رأس وجه</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>إحداثيات الرأس المحدد</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>الوجه يستخدم رؤوس:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>سحب: تدوير</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>سحب يمين: تحريك</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>تمرير: تكبير</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>أشكال سريعة</value></data>
+<data name="PresetBox" xml:space="preserve"><value>مربع</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>شكل L</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>كاتدرائية</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>استوديو</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>شكل T</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>شكل U</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z:قفل محور</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>رؤوس</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>أوجه</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>رؤوس الوجه</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>تحريك لأعلى</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>تحريك لأسفل</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>مادة</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>نقر: تحديد</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>سحب: تحريك</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl:تبديل وجه</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>شبكة</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>أبعاد</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>تراجع</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>إعادة</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>أرضية</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>سقف</value></data>
+<data name="WallLabel" xml:space="preserve"><value>جدار</value></data>
 </root>

@@ -6,21 +6,100 @@
         xmlns:vm="clr-namespace:SpaceAudio.ViewModels"
         xmlns:localization="clr-namespace:SpaceAudio.Localization"
         xmlns:rendering="clr-namespace:SpaceAudio.Rendering"
+        xmlns:c="clr-namespace:YukkuriMovieMaker.Controls;assembly=YukkuriMovieMaker.Controls"
         d:DataContext="{d:DesignInstance Type=vm:RoomShapeEditorViewModel}"
         mc:Ignorable="d"
         Title="{x:Static localization:Texts.ShapeEditorTitle}"
-        Height="620" Width="900" MinHeight="500" MinWidth="700"
+        Height="700" Width="1020" MinHeight="540" MinWidth="760"
         WindowStartupLocation="CenterOwner"
+
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <Geometry x:Key="ChevronUp">M 0,7 L 5,0.5 L 10,7</Geometry>
+        <Geometry x:Key="ChevronDown">M 0,0.5 L 5,7 L 10,0.5</Geometry>
+
+        <Style x:Key="SlimScrollThumb" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="thumb"
+                                Background="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                CornerRadius="3" Margin="2"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="thumb" Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="thumb" Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Opacity="0" IsHitTestVisible="False" Command="ScrollBar.PageUpCommand"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource SlimScrollThumb}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Opacity="0" IsHitTestVisible="False" Command="ScrollBar.PageDownCommand"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SlimScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0" CanContentScroll="{TemplateBinding CanContentScroll}"/>
+                            <ScrollBar Grid.Column="1"
+                                       Style="{StaticResource SlimScrollBar}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="Button" x:Key="EditorBtn">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="2"/>
+            <Setter Property="MinWidth" Value="70"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -29,40 +108,336 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="3" SnapsToDevicePixels="True">
                             <ContentPresenter Focusable="False" HorizontalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"
-                                              VerticalAlignment="Center"/>
+                                              Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush"
                                         Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="border" Property="Background" Value="Transparent"/>
+                            </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background"
-                                        Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style TargetType="Button" x:Key="SmallBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="2,1"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="0" SnapsToDevicePixels="True">
+                            <ContentPresenter Focusable="False" HorizontalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter TargetName="border" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Button" x:Key="PresetBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="Margin" Value="2,2"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" SnapsToDevicePixels="True">
+                            <ContentPresenter Focusable="False" HorizontalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="border" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="TextBox" x:Key="CoordBox">
-            <Setter Property="Width" Value="70"/>
+            <Setter Property="Width" Value="72"/>
             <Setter Property="Margin" Value="2"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+        </Style>
+
+        <Style TargetType="ListBox" x:Key="PanelList">
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="4,2"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabControl" x:Key="ThemedTabControl">
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TabPanel Grid.Row="0"
+                                      IsItemsHost="True"
+                                      Background="Transparent"
+                                      KeyboardNavigation.TabIndex="1"/>
+                            <Border Grid.Row="1"
+                                    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                    BorderThickness="1"
+                                    KeyboardNavigation.TabNavigation="Local"
+                                    KeyboardNavigation.DirectionalNavigation="Contained"
+                                    KeyboardNavigation.TabIndex="2">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  Margin="0"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabItem" x:Key="ThemedTabItem">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="tabBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1,1,1,0"
+                                CornerRadius="3,3,0,0"
+                                Margin="0,0,2,0"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter x:Name="tabContent"
+                                              ContentSource="Header"
+                                              Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tabBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                <Setter TargetName="tabBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                                <Setter TargetName="tabBorder" Property="BorderThickness" Value="1,1,1,0"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="tabBorder" Property="Background" Value="Transparent"/>
+                                <Setter TargetName="tabBorder" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tabBorder" Property="Opacity" Value="1"/>
+                                <Setter TargetName="tabBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBox" x:Key="ThemedCombo">
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                            </Grid.ColumnDefinitions>
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   PopupAnimation="Slide"
+                                   Width="{Binding ActualWidth, ElementName=templateRoot}">
+                                <Border x:Name="dropBorder"
+                                        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                                        BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                        BorderThickness="1"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer Style="{StaticResource SlimScrollViewer}">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                            <Border Grid.Column="0" Grid.ColumnSpan="2"
+                                    x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="2"/>
+                            <ToggleButton Grid.Column="0" Grid.ColumnSpan="2"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Focusable="False">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter Grid.Column="0"
+                                              x:Name="contentPresenter"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              IsHitTestVisible="False"
+                                              Margin="6,2,2,2"
+                                              VerticalAlignment="Center"/>
+                            <Path Grid.Column="1"
+                                  x:Name="arrow"
+                                  Data="M 0,0 L 4,4 L 8,0"
+                                  Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                  StrokeThickness="1.5"
+                                  StrokeLineJoin="Round"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Width="8" Height="4" Stretch="Uniform"
+                                  IsHitTestVisible="False"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+                        <Setter Property="Padding" Value="6,3"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
+
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="300"/>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*" MinWidth="350"/>
+            <ColumnDefinition Width="360" MinWidth="320"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
-                BorderThickness="1" CornerRadius="3" ClipToBounds="True" Margin="0,0,8,0"
+        <Border Grid.Column="0"
+                x:Name="PreviewBorder"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="1" CornerRadius="4" ClipToBounds="True" Margin="0,0,10,0"
                 Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
             <Grid>
                 <rendering:RoomVisualHost x:Name="PreviewHost"/>
@@ -73,6 +448,24 @@
                         MouseRightButtonDown="Preview_MouseRightButtonDown"
                         MouseRightButtonUp="Preview_MouseRightButtonUp"
                         MouseWheel="Preview_MouseWheel"/>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        Margin="6" Padding="8,5"
+                        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                        BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                        BorderThickness="1" CornerRadius="3" Opacity="0.88">
+                    <TextBlock FontSize="10" Opacity="0.75"
+                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+                        <Run Text="{x:Static localization:Texts.HintClickVertex}"/>
+                        <Run Text="  |  "/>
+                        <Run Text="{x:Static localization:Texts.HintDragVertex}"/>
+                        <Run Text="  |  "/>
+                        <Run Text="{x:Static localization:Texts.HintAxisLock}"/>
+                        <Run Text="  |  "/>
+                        <Run Text="{x:Static localization:Texts.HintDragRotate}"/>
+                        <Run Text="  |  "/>
+                        <Run Text="{x:Static localization:Texts.HintRightDragPan}"/>
+                    </TextBlock>
+                </Border>
             </Grid>
         </Border>
 
@@ -81,54 +474,387 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="{x:Static localization:Texts.VerticesList}" FontWeight="Bold" Margin="0,0,0,4"/>
-            <ListBox Grid.Row="1" ItemsSource="{Binding Vertices}" SelectedIndex="{Binding SelectedVertexIndex}"
-                     Background="Transparent" BorderThickness="1"
-                     BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
-
-            <StackPanel Grid.Row="2" Margin="0,6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="X" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox Grid.Column="1" Text="{Binding VertexX, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
-                    <TextBlock Grid.Column="2" Text="Y" VerticalAlignment="Center" Margin="4,0,4,0"/>
-                    <TextBox Grid.Column="3" Text="{Binding VertexY, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
-                    <TextBlock Grid.Column="4" Text="Z" VerticalAlignment="Center" Margin="4,0,4,0"/>
-                    <TextBox Grid.Column="5" Text="{Binding VertexZ, StringFormat=F2, UpdateSourceTrigger=LostFocus}" Style="{StaticResource CoordBox}"/>
-                </Grid>
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                    <Button Content="{x:Static localization:Texts.AddVertex}" Command="{Binding AddVertexCommand}" Style="{StaticResource EditorBtn}"/>
-                    <Button Content="{x:Static localization:Texts.RemoveVertex}" Command="{Binding RemoveVertexCommand}" Style="{StaticResource EditorBtn}"/>
+            <Border Grid.Row="0" Margin="0,0,0,6" Padding="6,5"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                    BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <TextBlock Text="{x:Static localization:Texts.ShapePresets}"
+                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                               FontSize="10.5" Opacity="0.65" Margin="0,0,0,4"/>
+                    <WrapPanel Margin="0,0,0,4">
+                        <Button Content="{x:Static localization:Texts.PresetBox}"
+                                Command="{Binding ApplyBoxPresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                        <Button Content="{x:Static localization:Texts.PresetLShape}"
+                                Command="{Binding ApplyLShapePresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                        <Button Content="{x:Static localization:Texts.PresetCathedral}"
+                                Command="{Binding ApplyCathedralPresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                        <Button Content="{x:Static localization:Texts.PresetStudio}"
+                                Command="{Binding ApplyStudioPresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                        <Button Content="{x:Static localization:Texts.PresetTShape}"
+                                Command="{Binding ApplyTShapePresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                        <Button Content="{x:Static localization:Texts.PresetUShape}"
+                                Command="{Binding ApplyUShapePresetCommand}"
+                                Style="{StaticResource PresetBtn}"/>
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding ShowGrid}" VerticalAlignment="Center"
+                                  Content="{x:Static localization:Texts.ShowGridLabel}"
+                                  Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                  FontSize="10" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding ShowDimensions}" VerticalAlignment="Center"
+                                  Content="{x:Static localization:Texts.ShowDimensionsLabel}"
+                                  Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                  FontSize="10"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+            </Border>
 
-            <TextBlock Grid.Row="3" Text="{x:Static localization:Texts.FacesList}" FontWeight="Bold" Margin="0,0,0,4" VerticalAlignment="Top"/>
-            <ListBox Grid.Row="3" ItemsSource="{Binding FaceItems}" SelectedIndex="{Binding SelectedFaceIndex}"
-                     Margin="0,20,0,0" Background="Transparent" BorderThickness="1"
-                     BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <TabControl Grid.Row="1" Style="{StaticResource ThemedTabControl}">
+                <TabItem Header="{x:Static localization:Texts.VertexEditTab}"
+                         Style="{StaticResource ThemedTabItem}">
+                    <Grid Margin="8"
+                          Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
-                <Button Content="{x:Static localization:Texts.AddFace}" Command="{Binding AddFaceCommand}" Style="{StaticResource EditorBtn}"/>
-                <Button Content="{x:Static localization:Texts.RemoveFace}" Command="{Binding RemoveFaceCommand}" Style="{StaticResource EditorBtn}"/>
-            </StackPanel>
+                        <Border Grid.Row="0" Margin="0,0,0,6" Padding="8,5"
+                                Background="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                CornerRadius="3" Opacity="0.4">
+                            <TextBlock Text="{x:Static localization:Texts.VerticesList}"
+                                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                       FontWeight="SemiBold" FontSize="12"/>
+                        </Border>
 
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="{x:Static localization:Texts.SaveGeometry}" Command="{Binding SaveGeometryCommand}" Style="{StaticResource EditorBtn}" MinWidth="80"/>
-                <Button Content="{x:Static localization:Texts.Apply}" Command="{Binding ApplyCommand}" Style="{StaticResource EditorBtn}" MinWidth="80"/>
-                <Button Content="{x:Static localization:Texts.Cancel}" IsCancel="True" Style="{StaticResource EditorBtn}" MinWidth="80"/>
-            </StackPanel>
+                        <ListBox x:Name="VerticesListBox" Grid.Row="1" Style="{StaticResource PanelList}"
+                                 ItemsSource="{Binding Vertices}"
+                                 SelectionMode="Extended"
+                                 SelectionChanged="VerticesList_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2" Height="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="22" Height="22"
+                                                Background="#007bbb" CornerRadius="11"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Index}" FontSize="9" FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                   FontFamily="Consolas" FontSize="11"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="({0:F2},  {1:F2},  {2:F2})">
+                                                    <Binding Path="X"/>
+                                                    <Binding Path="Y"/>
+                                                    <Binding Path="Z"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Border Grid.Row="2" Margin="0,8,0,6" Padding="8,8"
+                                BorderBrush="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"
+                                BorderThickness="1" CornerRadius="0"
+                                Visibility="{Binding HasSelectedVertex, Converter={StaticResource BoolVis}}">
+                            <StackPanel>
+                                <TextBlock Text="{x:Static localization:Texts.SelectedVertexCoordinates}"
+                                           Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                           FontSize="10" Opacity="0.6" Margin="0,0,0,4"/>
+                                <Grid Margin="0,2" Visibility="{Binding IsSingleVertexSelection, Converter={StaticResource BoolVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="X" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FFDC3C3C" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="0" Grid.Column="1"
+                                                     x:Name="SliderX"
+                                                     Value="{Binding VertexX, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="F3" Unit="m"
+                                                     Margin="0,2"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Y" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FF44CC88" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="1" Grid.Column="1"
+                                                     x:Name="SliderY"
+                                                     Value="{Binding VertexY, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="F3" Unit="m"
+                                                     Margin="0,2"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Z" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FF4488FF" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="2" Grid.Column="1"
+                                                     x:Name="SliderZ"
+                                                     Value="{Binding VertexZ, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="F3" Unit="m"
+                                                     Margin="0,2"/>
+                                </Grid>
+                                <Grid Margin="0,2" Visibility="{Binding IsMultiVertexSelection, Converter={StaticResource BoolVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="X" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FFDC3C3C" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="0" Grid.Column="1"
+                                                     x:Name="SliderMultiX"
+                                                     Value="{Binding MultiVertexDeltaX, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="{Binding MultiVertexFormat, Mode=OneWay}" Unit="m"
+                                                     Margin="0,2"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Y" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FF44CC88" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="1" Grid.Column="1"
+                                                     x:Name="SliderMultiY"
+                                                     Value="{Binding MultiVertexDeltaY, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="{Binding MultiVertexFormat, Mode=OneWay}" Unit="m"
+                                                     Margin="0,2"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Z" VerticalAlignment="Center"
+                                               FontWeight="Bold" Foreground="#FF4488FF" Margin="0,2"/>
+                                    <c:TextBoxSlider Grid.Row="2" Grid.Column="1"
+                                                     x:Name="SliderMultiZ"
+                                                     Value="{Binding MultiVertexDeltaZ, Mode=TwoWay}"
+                                                     Min="0" Max="100"
+                                                     Delta="0.1" StringFormat="{Binding MultiVertexFormat, Mode=OneWay}" Unit="m"
+                                                     Margin="0,2"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal">
+                            <Button Content="{x:Static localization:Texts.AddVertex}"
+                                    Command="{Binding AddVertexCommand}" Style="{StaticResource EditorBtn}"/>
+                            <Button Content="{x:Static localization:Texts.RemoveVertex}"
+                                    Command="{Binding RemoveVertexCommand}" Style="{StaticResource EditorBtn}"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="{x:Static localization:Texts.FaceEditTab}"
+                         Style="{StaticResource ThemedTabItem}">
+                    <Grid Margin="8"
+                          Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="160"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Margin="0,0,0,6" Padding="8,5"
+                                Background="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                CornerRadius="3" Opacity="0.4">
+                            <TextBlock Text="{x:Static localization:Texts.FacesList}"
+                                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                       FontWeight="SemiBold" FontSize="12"/>
+                        </Border>
+
+                        <ListBox Grid.Row="1" Style="{StaticResource PanelList}"
+                                 ItemsSource="{Binding FaceItems}"
+                                 SelectedIndex="{Binding SelectedFaceIndex}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2" Height="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="22" Height="22"
+                                                Background="#FF808080" CornerRadius="3"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Index}" FontSize="9" FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                   FontFamily="Consolas" FontSize="11"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                                   Text="{Binding Indices, StringFormat='[{0}]'}"/>
+                                        <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                                   Opacity="0.55" FontSize="10" Margin="6,0,2,0"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                                   Text="{Binding Material}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                            <Button Content="{x:Static localization:Texts.AddFace}"
+                                    Command="{Binding AddFaceCommand}" Style="{StaticResource EditorBtn}"/>
+                            <Button Content="{x:Static localization:Texts.RemoveFace}"
+                                    Command="{Binding RemoveFaceCommand}" Style="{StaticResource EditorBtn}"/>
+                        </StackPanel>
+
+                        <Border Grid.Row="3" Margin="0,10,0,6" Padding="8,5"
+                                Background="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"
+                                CornerRadius="3" Opacity="0.18"
+                                Visibility="{Binding HasSelectedFace, Converter={StaticResource BoolVis}}"/>
+                        <TextBlock Grid.Row="3" Margin="8,10,0,6"
+                                   Text="{x:Static localization:Texts.FaceMembership}"
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   FontWeight="SemiBold" FontSize="11.5"
+                                   Visibility="{Binding HasSelectedFace, Converter={StaticResource BoolVis}}"/>
+
+                        <Border Grid.Row="4"
+                                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                BorderThickness="1" CornerRadius="3"
+                                Visibility="{Binding HasSelectedFace, Converter={StaticResource BoolVis}}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          Style="{StaticResource SlimScrollViewer}">
+                                <ItemsControl ItemsSource="{Binding FaceVertexMemberships}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="6,3" BorderThickness="0,0,0,1"
+                                                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsInFace}" Value="True">
+                                                                <Setter Property="Background">
+                                                                    <Setter.Value>
+                                                                        <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.HighlightColor}}" Opacity="0.08"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Height="28">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="24"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="34"/>
+                                                        <ColumnDefinition Width="28"/>
+                                                        <ColumnDefinition Width="28"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Grid.Column="0"
+                                                              IsChecked="{Binding IsInFace}"
+                                                              VerticalAlignment="Center"
+                                                              HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding VertexLabel}"
+                                                               FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                                               VerticalAlignment="Center" Margin="4,0"/>
+                                                    <Border Grid.Column="2"
+                                                            Width="28" Height="20"
+                                                            Background="#5b7e91"
+                                                            CornerRadius="10"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center"
+                                                            Visibility="{Binding IsInFace, Converter={StaticResource BoolVis}}">
+                                                        <TextBlock Text="{Binding FaceOrderLabel}"
+                                                                   Foreground="White"
+                                                                   FontSize="9" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Button Grid.Column="3"
+                                                            Style="{StaticResource SmallBtn}"
+                                                            Command="{Binding DataContext.MoveFaceVertexUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding VertexIndex}"
+                                                            Visibility="{Binding IsInFace, Converter={StaticResource BoolVis}}"
+                                                            ToolTip="{x:Static localization:Texts.MoveVertexUp}">
+                                                        <Path Data="{StaticResource ChevronUp}"
+                                                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                              StrokeThickness="2" StrokeLineJoin="Round"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                              Width="10" Height="8" Stretch="Uniform"/>
+                                                    </Button>
+                                                    <Button Grid.Column="4"
+                                                            Style="{StaticResource SmallBtn}"
+                                                            Command="{Binding DataContext.MoveFaceVertexDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding VertexIndex}"
+                                                            Visibility="{Binding IsInFace, Converter={StaticResource BoolVis}}"
+                                                            ToolTip="{x:Static localization:Texts.MoveVertexDown}">
+                                                        <Path Data="{StaticResource ChevronDown}"
+                                                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                              StrokeThickness="2" StrokeLineJoin="Round"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                              Width="10" Height="8" Stretch="Uniform"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+
+                        <Grid Grid.Row="5" Margin="0,8,0,0"
+                              Visibility="{Binding HasSelectedFace, Converter={StaticResource BoolVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{x:Static localization:Texts.FaceMaterial}"
+                                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1"
+                                      Style="{StaticResource ThemedCombo}"
+                                      ItemsSource="{Binding GeometryMaterials}"
+                                      DisplayMemberPath="LocalizedName"
+                                      SelectedIndex="{Binding SelectedFaceMaterialIndex}"
+                                      Height="26" VerticalContentAlignment="Center"/>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <Grid Grid.Row="2" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Content="{x:Static localization:Texts.SaveGeometry}"
+                        Command="{Binding SaveGeometryCommand}"
+                        Style="{StaticResource EditorBtn}"
+                        HorizontalAlignment="Left"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="{x:Static localization:Texts.Apply}"
+                            Command="{Binding ApplyCommand}"
+                            Style="{StaticResource EditorBtn}"/>
+                    <Button Content="{x:Static localization:Texts.Cancel}"
+                            Style="{StaticResource EditorBtn}"
+                            Click="CancelButton_Click"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>Add Vertex</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>Remove Vertex</value></data>
 <data name="AddFace" xml:space="preserve"><value>Add Face</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>Export Blueprint Image</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>Import from Blueprint Image</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>No blueprint data found in the image.</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>PLAN</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>FRONT ELEVATION</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>RIGHT SIDE ELEVATION</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>PROJECT NAME</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>DATE</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(Unnamed)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>SpaceAudio Blueprint System</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>Remove Face</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>Save Geometry</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>Save Geometry</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>Add Material</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>Update</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>Delete material ""{0}""?</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● Blue = selected</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● Yellow = face member</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>Selected vertex coordinates</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>Face uses vertices:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>Drag: Rotate</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>Right-drag: Pan</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>Scroll: Zoom</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>Shape Presets</value></data>
+<data name="PresetBox" xml:space="preserve"><value>Box</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>L-Shape</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>Cathedral</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>Studio</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>T-Shape</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>U-Shape</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z: Lock axis</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>Vertices</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>Faces</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>Face Vertices</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>Move Up</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>Move Down</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>Material</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>Click: Select</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>Drag: Move</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl: Toggle face</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>Grid</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>Dimensions</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>Undo</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>Redo</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>Floor</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>Ceiling</value></data>
+<data name="WallLabel" xml:space="preserve"><value>Wall</value></data>
 </root>

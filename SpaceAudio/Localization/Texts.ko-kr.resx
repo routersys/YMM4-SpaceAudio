@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>꼭짓점 추가</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>꼭짓점 제거</value></data>
 <data name="AddFace" xml:space="preserve"><value>면 추가</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>설계도 이미지 내보내기</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>설계도 이미지에서 가져오기</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>설계도 데이터가 포함되어 있지 않습니다.</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>평면도</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>정면도</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>측면도</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>프로젝트 이름</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>작성일</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(이름 없음)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>SpaceAudio 설계도 출력 시스템</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>면 제거</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>지오메트리 저장</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>지오메트리 저장</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>재질 추가</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>업데이트</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>재질 ""{0}""을(를) 삭제하시겠습니까?</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● 파랑=선택됨</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● 노랑=면 꼭짓점</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>선택된 꼭짓점 좌표</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>면이 사용하는 꼭짓점:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>드래그: 회전</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>우클릭 드래그: 이동</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>스크롤: 줌</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>모양 프리셋</value></data>
+<data name="PresetBox" xml:space="preserve"><value>박스</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>L자형</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>대성당</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>스튜디오</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>T자형</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>U자형</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z:축 고정</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>꼭짓점</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>면</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>면의 꼭짓점</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>위로 이동</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>아래로 이동</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>면 재질</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>클릭: 선택</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>드래그: 이동</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl:면 전환</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>그리드</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>치수</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>실행 취소</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>다시 실행</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>바닥</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>천장</value></data>
+<data name="WallLabel" xml:space="preserve"><value>벽</value></data>
 </root>

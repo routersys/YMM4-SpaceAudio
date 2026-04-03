@@ -27,11 +27,16 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
     private Point _lastMousePos;
     private bool _needsRedraw = true;
     private int _draggingTarget;
-
     private bool _isCompactMode;
+
+    private RoomShapeEditorWindow? _shapeEditorWindow;
+    private MaterialManagerWindow? _materialManagerWindow;
 
     public event EventHandler? BeginEdit;
     public event EventHandler? EndEdit;
+
+    private float _lastSx = -1, _lastSz = -1;
+    private float _lastLx = -1, _lastLz = -1;
 
     public new SpaceAudioEffect? Effect
     {
@@ -43,13 +48,24 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
             if (_effect is INotifyPropertyChanged oldNpc)
                 oldNpc.PropertyChanged -= OnEffectPropertyChanged;
 
+            _shapeEditorWindow?.Close();
+            _shapeEditorWindow = null;
+            _materialManagerWindow?.Close();
+            _materialManagerWindow = null;
+
             _effect = value;
 
             if (_effect is INotifyPropertyChanged newNpc)
                 newNpc.PropertyChanged += OnEffectPropertyChanged;
 
             if (_effect is not null)
+            {
                 ViewModel.Effect = _effect;
+                _lastSx = _effect.SourceXValue;
+                _lastSz = _effect.SourceZValue;
+                _lastLx = _effect.ListenerXValue;
+                _lastLz = _effect.ListenerZValue;
+            }
 
             _needsRedraw = true;
         }
@@ -83,8 +99,21 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
         Unloaded += OnUnloaded;
     }
 
-    private void OnEffectPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
+    private void OnEffectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
         _needsRedraw = true;
+        if (_shapeEditorWindow is not null
+            && (e.PropertyName is nameof(SpaceAudioEffect.RoomWidthValue)
+                                or nameof(SpaceAudioEffect.RoomHeightValue)
+                                or nameof(SpaceAudioEffect.RoomDepthValue))
+            && _effect is not null)
+        {
+            _shapeEditorWindow.UpdateEffectDimensions(
+                _effect.RoomWidthValue,
+                _effect.RoomHeightValue,
+                _effect.RoomDepthValue);
+        }
+    }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -99,6 +128,10 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
         CompositionTarget.Rendering -= OnRenderFrame;
         if (_effect is INotifyPropertyChanged npc)
             npc.PropertyChanged -= OnEffectPropertyChanged;
+        _shapeEditorWindow?.Close();
+        _shapeEditorWindow = null;
+        _materialManagerWindow?.Close();
+        _materialManagerWindow = null;
     }
 
     private void OnRenderFrame(object? sender, EventArgs e)
@@ -116,14 +149,52 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
         float rw = _effect.RoomWidthValue;
         float rh = _effect.RoomHeightValue;
         float rd = _effect.RoomDepthValue;
+        var geo = _effect.ResolveScaledGeometry(rw, rh, rd);
 
-        foreach (var k in _effect.SourceX.Values) if (k.Value > rw) k.Value = rw;
-        foreach (var k in _effect.SourceY.Values) if (k.Value > rh) k.Value = rh;
-        foreach (var k in _effect.SourceZ.Values) if (k.Value > rd) k.Value = rd;
+        void ClampValues(Animation animX, Animation animY, Animation animZ, ref float lastX, ref float lastZ)
+        {
+            if (geo is not null)
+            {
+                for (int i = 0; i < animX.Values.Count || i < animZ.Values.Count || i < animY.Values.Count; i++)
+                {
+                    double vx = i < animX.Values.Count ? animX.Values[i].Value : animX.Values[0].Value;
+                    double vz = i < animZ.Values.Count ? animZ.Values[i].Value : animZ.Values[0].Value;
 
-        foreach (var k in _effect.ListenerX.Values) if (k.Value > rw) k.Value = rw;
-        foreach (var k in _effect.ListenerY.Values) if (k.Value > rh) k.Value = rh;
-        foreach (var k in _effect.ListenerZ.Values) if (k.Value > rd) k.Value = rd;
+                    (float newX, float newZ) = geo.RayCastXZ(lastX, lastZ, (float)vx, (float)vz);
+
+                    if (i < animX.Values.Count && (float)vx != newX) animX.Values[i].Value = newX;
+                    if (i < animZ.Values.Count && (float)vz != newZ) animZ.Values[i].Value = newZ;
+
+                    if (i < animY.Values.Count)
+                    {
+                        var (yMin, yMax) = geo.GetYBoundsAtXZ(newX, newZ, 0, rh);
+                        double vy = animY.Values[i].Value;
+                        if (vy < yMin) animY.Values[i].Value = yMin;
+                        else if (vy > yMax) animY.Values[i].Value = yMax;
+                    }
+
+                    if (i == 0)
+                    {
+                        lastX = newX;
+                        lastZ = newZ;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var k in animX.Values) if (k.Value > rw) k.Value = rw; else if (k.Value < 0) k.Value = 0;
+                foreach (var k in animY.Values) if (k.Value > rh) k.Value = rh; else if (k.Value < 0) k.Value = 0;
+                foreach (var k in animZ.Values) if (k.Value > rd) k.Value = rd; else if (k.Value < 0) k.Value = 0;
+            }
+        }
+
+        if (_lastSx < 0) _lastSx = _effect.SourceXValue;
+        if (_lastSz < 0) _lastSz = _effect.SourceZValue;
+        if (_lastLx < 0) _lastLx = _effect.ListenerXValue;
+        if (_lastLz < 0) _lastLz = _effect.ListenerZValue;
+
+        ClampValues(_effect.SourceX, _effect.SourceY, _effect.SourceZ, ref _lastSx, ref _lastSz);
+        ClampValues(_effect.ListenerX, _effect.ListenerY, _effect.ListenerZ, ref _lastLx, ref _lastLz);
     }
 
     private void DrawAll()
@@ -229,15 +300,39 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
 
             if (_draggingTarget == 1)
             {
-                _effect.SourceXValue = Math.Clamp(_effect.SourceXValue + dXWorld, 0, _effect.RoomWidthValue);
-                _effect.SourceYValue = Math.Clamp(_effect.SourceYValue + dYWorld, 0, _effect.RoomHeightValue);
-                _effect.SourceZValue = Math.Clamp(_effect.SourceZValue + dZWorld, 0, _effect.RoomDepthValue);
+                float nx = Math.Clamp(_effect.SourceXValue + dXWorld, 0, _effect.RoomWidthValue);
+                float ny = Math.Clamp(_effect.SourceYValue + dYWorld, 0, _effect.RoomHeightValue);
+                float nz = Math.Clamp(_effect.SourceZValue + dZWorld, 0, _effect.RoomDepthValue);
+                var geo = _effect.ResolveScaledGeometry(_effect.RoomWidthValue, _effect.RoomHeightValue, _effect.RoomDepthValue);
+                if (geo is not null)
+                {
+                    var clamped = geo.ClampToPolygonXZ(nx, nz);
+                    nx = clamped.X;
+                    nz = clamped.Z;
+                    var (yMin, yMax) = geo.GetYBoundsAtXZ(nx, nz, 0, _effect.RoomHeightValue);
+                    ny = Math.Clamp(ny, yMin, yMax);
+                }
+                _effect.SourceXValue = nx;
+                _effect.SourceYValue = ny;
+                _effect.SourceZValue = nz;
             }
             else
             {
-                _effect.ListenerXValue = Math.Clamp(_effect.ListenerXValue + dXWorld, 0, _effect.RoomWidthValue);
-                _effect.ListenerYValue = Math.Clamp(_effect.ListenerYValue + dYWorld, 0, _effect.RoomHeightValue);
-                _effect.ListenerZValue = Math.Clamp(_effect.ListenerZValue + dZWorld, 0, _effect.RoomDepthValue);
+                float nx = Math.Clamp(_effect.ListenerXValue + dXWorld, 0, _effect.RoomWidthValue);
+                float ny = Math.Clamp(_effect.ListenerYValue + dYWorld, 0, _effect.RoomHeightValue);
+                float nz = Math.Clamp(_effect.ListenerZValue + dZWorld, 0, _effect.RoomDepthValue);
+                var geo = _effect.ResolveScaledGeometry(_effect.RoomWidthValue, _effect.RoomHeightValue, _effect.RoomDepthValue);
+                if (geo is not null)
+                {
+                    var clamped = geo.ClampToPolygonXZ(nx, nz);
+                    nx = clamped.X;
+                    nz = clamped.Z;
+                    var (yMin, yMax) = geo.GetYBoundsAtXZ(nx, nz, 0, _effect.RoomHeightValue);
+                    ny = Math.Clamp(ny, yMin, yMax);
+                }
+                _effect.ListenerXValue = nx;
+                _effect.ListenerYValue = ny;
+                _effect.ListenerZValue = nz;
             }
             _needsRedraw = true;
         }
@@ -287,84 +382,158 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
 
     private void ShowContextMenu(Point position)
     {
-        var menu = new ContextMenu();
-        menu.Style = null;
+        var bg = TryFindResource(SystemColors.ControlBrushKey) as Brush ?? SystemColors.ControlBrush;
+        var fg = TryFindResource(SystemColors.ControlTextBrushKey) as Brush ?? SystemColors.ControlTextBrush;
+        var border = TryFindResource(SystemColors.ControlDarkBrushKey) as Brush ?? SystemColors.ControlDarkBrush;
+        var highlightBg = TryFindResource(SystemColors.HighlightBrushKey) as Brush ?? SystemColors.HighlightBrush;
+        var highlightFg = TryFindResource(SystemColors.HighlightTextBrushKey) as Brush ?? SystemColors.HighlightTextBrush;
 
-        var editShape = new MenuItem { Header = Localization.Texts.EditRoomShape, Command = ViewModel.EditShapeCommand };
-        var manageMat = new MenuItem { Header = Localization.Texts.ManageMaterials, Command = ViewModel.ManageMaterialsCommand };
+        var menu = new ContextMenu
+        {
+            Background = bg,
+            Foreground = fg,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1)
+        };
 
-        menu.Items.Add(editShape);
-        menu.Items.Add(manageMat);
-        menu.Items.Add(new Separator());
+        MenuItem MakeItem(string header, ICommand? command = null, object? parameter = null, object? icon = null)
+        {
+            var item = new MenuItem
+            {
+                Header = header,
+                Command = command,
+                CommandParameter = parameter,
+                Background = bg,
+                Foreground = fg,
+                Icon = icon
+            };
+            ApplyMenuItemStyle(item, bg, fg, highlightBg, highlightFg);
+            return item;
+        }
+
+        System.Windows.Shapes.Ellipse MakeCircleIcon(Color color) => new()
+        {
+            Width = 12,
+            Height = 12,
+            Fill = new SolidColorBrush(color),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        Separator MakeSeparator()
+        {
+            var sep = new Separator();
+            sep.SetResourceReference(BackgroundProperty, SystemColors.ControlDarkBrushKey);
+            return sep;
+        }
+
+        menu.Items.Add(MakeItem(Localization.Texts.EditRoomShape, ViewModel.EditShapeCommand));
+        menu.Items.Add(MakeItem(Localization.Texts.ManageMaterials, ViewModel.ManageMaterialsCommand));
+        menu.Items.Add(MakeSeparator());
 
         var geometries = ServiceLocator.GeometryService.GetAllIds();
         if (geometries.Count > 0)
         {
-            var loadGeoMenu = new MenuItem { Header = Localization.Texts.LoadGeometry };
+            var loadGeoItem = MakeItem(Localization.Texts.LoadGeometry);
             foreach (var id in geometries)
-            {
-                var item = new MenuItem { Header = id, Command = ViewModel.LoadGeometryCommand, CommandParameter = id };
-                loadGeoMenu.Items.Add(item);
-            }
-            menu.Items.Add(loadGeoMenu);
-            menu.Items.Add(new Separator());
+                loadGeoItem.Items.Add(MakeItem(id, ViewModel.LoadGeometryCommand, id));
+            menu.Items.Add(loadGeoItem);
+            menu.Items.Add(MakeSeparator());
         }
 
-        var resetSource = new MenuItem { Header = Localization.Texts.ResetSource, Command = ViewModel.ResetSourceCommand };
-        var resetListener = new MenuItem { Header = Localization.Texts.ResetListener, Command = ViewModel.ResetListenerCommand };
-        var centerSource = new MenuItem { Header = Localization.Texts.CenterSource, Command = ViewModel.CenterSourceCommand };
-        var centerListener = new MenuItem { Header = Localization.Texts.CenterListener, Command = ViewModel.CenterListenerCommand };
-        var swapPos = new MenuItem { Header = Localization.Texts.SwapPositions, Command = ViewModel.SwapPositionsCommand };
+        menu.Items.Add(MakeItem(Localization.Texts.ResetSource, ViewModel.ResetSourceCommand, null, MakeCircleIcon(Colors.Orange)));
+        menu.Items.Add(MakeItem(Localization.Texts.ResetListener, ViewModel.ResetListenerCommand, null, MakeCircleIcon(Colors.LimeGreen)));
+        menu.Items.Add(MakeItem(Localization.Texts.CenterSource, ViewModel.CenterSourceCommand, null, MakeCircleIcon(Colors.Orange)));
+        menu.Items.Add(MakeItem(Localization.Texts.CenterListener, ViewModel.CenterListenerCommand, null, MakeCircleIcon(Colors.LimeGreen)));
+        menu.Items.Add(MakeItem(Localization.Texts.SwapPositions, ViewModel.SwapPositionsCommand));
+        menu.Items.Add(MakeSeparator());
 
-        menu.Items.Add(resetSource);
-        menu.Items.Add(resetListener);
-        menu.Items.Add(centerSource);
-        menu.Items.Add(centerListener);
-        menu.Items.Add(swapPos);
-        menu.Items.Add(new Separator());
-
-        var viewMenu = new MenuItem { Header = Localization.Texts.ViewOptions };
-        viewMenu.Items.Add(new MenuItem { Header = Localization.Texts.TopView, Command = new RelayCommand(_ => { TopView_Click(null!, null!); }) });
-        viewMenu.Items.Add(new MenuItem { Header = Localization.Texts.FrontView, Command = new RelayCommand(_ => { FrontView_Click(null!, null!); }) });
-        viewMenu.Items.Add(new MenuItem { Header = Localization.Texts.SideView, Command = new RelayCommand(_ => { SideView_Click(null!, null!); }) });
-        viewMenu.Items.Add(new MenuItem { Header = Localization.Texts.ResetView, Command = new RelayCommand(_ => { ResetView_Click(null!, null!); }) });
-        menu.Items.Add(viewMenu);
+        var viewItem = MakeItem(Localization.Texts.ViewOptions);
+        viewItem.Items.Add(MakeItem(Localization.Texts.TopView, new RelayCommand(_ => TopView_Click(null!, null!))));
+        viewItem.Items.Add(MakeItem(Localization.Texts.FrontView, new RelayCommand(_ => FrontView_Click(null!, null!))));
+        viewItem.Items.Add(MakeItem(Localization.Texts.SideView, new RelayCommand(_ => SideView_Click(null!, null!))));
+        viewItem.Items.Add(MakeItem(Localization.Texts.ResetView, new RelayCommand(_ => ResetView_Click(null!, null!))));
+        menu.Items.Add(viewItem);
 
         menu.PlacementTarget = InteractionCanvas;
         menu.IsOpen = true;
     }
 
+    private static void ApplyMenuItemStyle(MenuItem item, Brush bg, Brush fg, Brush highlightBg, Brush highlightFg)
+    {
+        var style = new Style(typeof(MenuItem));
+        style.Setters.Add(new Setter(BackgroundProperty, bg));
+        style.Setters.Add(new Setter(ForegroundProperty, fg));
+
+        var trigger = new Trigger { Property = MenuItem.IsHighlightedProperty, Value = true };
+        trigger.Setters.Add(new Setter(BackgroundProperty, highlightBg));
+        trigger.Setters.Add(new Setter(ForegroundProperty, highlightFg));
+        style.Triggers.Add(trigger);
+
+        item.Style = style;
+    }
+
     private void OpenShapeEditor()
     {
+        if (_shapeEditorWindow is not null)
+        {
+            _shapeEditorWindow.Activate();
+            return;
+        }
+
         if (_effect is null) return;
-        var window = new RoomShapeEditorWindow { Topmost = true, WindowStartupLocation = WindowStartupLocation.CenterScreen };
-        try { window.Owner = Window.GetWindow(this); } catch { }
 
-        var currentGeo = _effect.ResolveGeometry();
-        if (currentGeo is null)
-        {
-            currentGeo = RoomGeometry.FromShape(
-                _effect.RoomShapeValue,
-                _effect.RoomWidthValue,
-                _effect.RoomHeightValue,
-                _effect.RoomDepthValue,
-                MaterialCoefficients.GetAbsorption(_effect.WallMaterialValue),
-                MaterialCoefficients.GetAbsorption(_effect.FloorMaterialValue),
-                MaterialCoefficients.GetAbsorption(_effect.CeilingMaterialValue));
-        }
-        window.SetGeometry(currentGeo);
+        var owner = Window.GetWindow(this);
+        var window = new RoomShapeEditorWindow();
+        try { window.Owner = owner; } catch { }
+        window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-        if (window.ShowDialog() == true && window.ResultGeometry is not null)
+        var currentGeo = _effect.ResolveScaledGeometry(_effect.RoomWidthValue, _effect.RoomHeightValue, _effect.RoomDepthValue) ?? RoomGeometry.FromShape(
+            _effect.RoomShapeValue,
+            _effect.RoomWidthValue,
+            _effect.RoomHeightValue,
+            _effect.RoomDepthValue,
+            MaterialCoefficients.GetAbsorption(_effect.WallMaterialValue),
+            MaterialCoefficients.GetAbsorption(_effect.FloorMaterialValue),
+            MaterialCoefficients.GetAbsorption(_effect.CeilingMaterialValue));
+
+        window.SetGeometry(currentGeo,
+            _effect.RoomWidthValue,
+            _effect.RoomHeightValue,
+            _effect.RoomDepthValue);
+        window.GeometryApplied += (_, geo) => ViewModel.ApplyGeometry(geo);
+        window.Closed += (_, _) =>
         {
-            ViewModel.ApplyGeometry(window.ResultGeometry);
-        }
+            _shapeEditorWindow = null;
+            owner?.Activate();
+        };
+
+        _shapeEditorWindow = window;
+        window.Show();
     }
 
     private void OpenMaterialManager()
     {
-        var window = new MaterialManagerWindow { Topmost = true, WindowStartupLocation = WindowStartupLocation.CenterScreen };
-        try { window.Owner = Window.GetWindow(this); } catch { }
-        window.ShowDialog();
+        if (_materialManagerWindow != null && _materialManagerWindow.IsLoaded)
+        {
+            if (_materialManagerWindow.WindowState == WindowState.Minimized)
+                _materialManagerWindow.WindowState = WindowState.Normal;
+            _materialManagerWindow.Activate();
+            return;
+        }
+
+        var owner = Window.GetWindow(this);
+        var window = new MaterialManagerWindow { WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        try { window.Owner = owner; } catch { }
+
+        window.Closed += (s, e) =>
+        {
+            _materialManagerWindow = null;
+            owner?.Activate();
+        };
+
+        _materialManagerWindow = window;
+        window.Show();
     }
 
     private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)

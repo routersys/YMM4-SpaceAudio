@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>Añadir vértice</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>Quitar vértice</value></data>
 <data name="AddFace" xml:space="preserve"><value>Añadir cara</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>Exportar imagen de plano</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>Importar desde imagen de plano</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>No se encontraron datos de plano en la imagen.</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>PLAN</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>ELEVACIÓN FRONTAL</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>ELEVACIÓN LATERAL</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>NOMBRE DEL PROYECTO</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>FECHA</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>(Sin nombre)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>Sistema de planos SpaceAudio</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>Quitar cara</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>Guardar geometría</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>Guardar geometría</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>Añadir material</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>Actualizar</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>¿Eliminar material ""{0}""?</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● Azul = seleccionado</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● Amarillo = vértice de cara</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>Coordenadas del vértice</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>Cara usa vértices:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>Arrastrar: Rotar</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>Arrastr. dcho: Mover</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>Rueda: Zoom</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>Formas rápidas</value></data>
+<data name="PresetBox" xml:space="preserve"><value>Caja</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>Forma L</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>Catedral</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>Estudio</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>Forma T</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>Forma U</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z: Fijar eje</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>Vértices</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>Caras</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>Vértices de cara</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>Subir</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>Bajar</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>Material</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>Clic: Selec.</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>Arrastrar: Mover</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl: Alternar</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>Cuadrícula</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>Dimensiones</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>Deshacer</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>Rehacer</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>Suelo</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>Techo</value></data>
+<data name="WallLabel" xml:space="preserve"><value>Pared</value></data>
 </root>

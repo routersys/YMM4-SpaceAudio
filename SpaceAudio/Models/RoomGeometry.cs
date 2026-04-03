@@ -1,4 +1,5 @@
 ﻿using SpaceAudio.Enums;
+using SpaceAudio.Localization;
 using System.Runtime.CompilerServices;
 
 namespace SpaceAudio.Models;
@@ -59,6 +60,31 @@ public sealed class RoomGeometry
         return MathF.Abs(volume) / 6.0f;
     }
 
+    public RoomGeometry CloneAndScale(float targetWidth, float targetHeight, float targetDepth)
+    {
+        float curW = Vertices.Length > 0 ? Vertices.Max(v => v.X) : 1f;
+        float curH = Vertices.Length > 0 ? Vertices.Max(v => v.Y) : 1f;
+        float curD = Vertices.Length > 0 ? Vertices.Max(v => v.Z) : 1f;
+        float sx = curW > 0.001f ? targetWidth / curW : 1f;
+        float sy = curH > 0.001f ? targetHeight / curH : 1f;
+        float sz = curD > 0.001f ? targetDepth / curD : 1f;
+        var verts = new GeometryVertex[Vertices.Length];
+        for (int i = 0; i < Vertices.Length; i++)
+        {
+            var v = Vertices[i];
+            verts[i] = new GeometryVertex(v.X * sx, v.Y * sy, v.Z * sz);
+        }
+        return new RoomGeometry
+        {
+            Name = Name,
+            ShapeId = ShapeId,
+            Vertices = verts,
+            Faces = Faces.ToArray(),
+            Materials = Materials.ToArray()
+        };
+    }
+
+
     public float CalculateSurfaceArea()
     {
         float area = 0;
@@ -94,11 +120,280 @@ public sealed class RoomGeometry
         Materials = Materials.Select(m => m.Clone()).ToArray()
     };
 
+    public (float MinX, float MaxX, float MinY, float MaxY, float MinZ, float MaxZ) GetBounds()
+    {
+        if (Vertices.Length == 0) return (0, 0, 0, 0, 0, 0);
+        float minX = float.MaxValue, maxX = float.MinValue;
+        float minY = float.MaxValue, maxY = float.MinValue;
+        float minZ = float.MaxValue, maxZ = float.MinValue;
+        foreach (var v in Vertices)
+        {
+            if (v.X < minX) minX = v.X; if (v.X > maxX) maxX = v.X;
+            if (v.Y < minY) minY = v.Y; if (v.Y > maxY) maxY = v.Y;
+            if (v.Z < minZ) minZ = v.Z; if (v.Z > maxZ) maxZ = v.Z;
+        }
+        return (minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    private bool IsPointInFaceXZProjection(in RoomFace face, float x, float z)
+    {
+        var verts = face.VertexIndices
+            .Where(vi => vi >= 0 && vi < Vertices.Length)
+            .Select(vi => Vertices[vi])
+            .ToArray();
+        if (verts.Length < 3) return false;
+        bool inside = false;
+        int n = verts.Length;
+        int j = n - 1;
+        for (int i = 0; i < n; i++)
+        {
+            float xi = verts[i].X, zi = verts[i].Z;
+            float xj = verts[j].X, zj = verts[j].Z;
+            if (((zi > z) != (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi))
+                inside = !inside;
+            j = i;
+        }
+        return inside;
+    }
+
+    private static float? GetFaceYAtXZ(in RoomFace face, GeometryVertex[] vertices, float x, float z)
+    {
+        if (face.VertexIndices.Length < 3) return null;
+        int i0 = face.VertexIndices[0];
+        int i1 = face.VertexIndices[1];
+        int i2 = face.VertexIndices[2];
+        if (i0 >= vertices.Length || i1 >= vertices.Length || i2 >= vertices.Length) return null;
+        var v0 = vertices[i0]; var v1 = vertices[i1]; var v2 = vertices[i2];
+        var e1 = v1.Subtract(in v0);
+        var e2 = v2.Subtract(in v0);
+        var normal = GeometryVertex.Cross(in e1, in e2);
+        if (MathF.Abs(normal.Y) < 1e-6f) return null;
+        float d = -(normal.X * v0.X + normal.Y * v0.Y + normal.Z * v0.Z);
+        return -(normal.X * x + normal.Z * z + d) / normal.Y;
+    }
+
+    public (float MinY, float MaxY) GetYBoundsAtXZ(float x, float z, float fallbackMin, float fallbackMax)
+    {
+        if (Faces.Length == 0 || Vertices.Length == 0) return (fallbackMin, fallbackMax);
+        float minY = fallbackMin;
+        float maxY = fallbackMax;
+        foreach (var face in Faces)
+        {
+            if (!IsPointInFaceXZProjection(in face, x, z)) continue;
+            float? fy = GetFaceYAtXZ(in face, Vertices, x, z);
+            if (fy is null) continue;
+            float yv = fy.Value;
+            float avgY = 0; int cnt = 0;
+            foreach (var vi in face.VertexIndices)
+            {
+                if (vi >= 0 && vi < Vertices.Length) { avgY += Vertices[vi].Y; cnt++; }
+            }
+            if (cnt == 0) continue;
+            avgY /= cnt;
+            float midY = (fallbackMin + fallbackMax) * 0.5f;
+            if (avgY <= midY)
+                minY = MathF.Max(minY, yv);
+            else
+                maxY = MathF.Min(maxY, yv);
+        }
+        return (minY, maxY);
+    }
+
+    private RoomFace? FindFloorFace()
+    {
+        RoomFace? floorFace = null;
+        float minAvgY = float.MaxValue;
+        foreach (var face in Faces)
+        {
+            if (face.VertexIndices.Length >= 3)
+            {
+                float avgY = 0;
+                int count = 0;
+                foreach (var vi in face.VertexIndices)
+                {
+                    if (vi >= 0 && vi < Vertices.Length)
+                    {
+                        avgY += Vertices[vi].Y;
+                        count++;
+                    }
+                }
+                if (count > 0)
+                {
+                    avgY /= count;
+                    if (avgY < minAvgY)
+                    {
+                        minAvgY = avgY;
+                        floorFace = face;
+                    }
+                }
+            }
+        }
+        return floorFace;
+    }
+
+    public bool IsPointInsideXZ(float x, float z)
+    {
+        if (Faces.Length == 0 || Vertices.Length == 0) return true;
+        var floorFace = FindFloorFace();
+        if (floorFace is null) return true;
+        var poly = floorFace.VertexIndices
+            .Where(vi => vi >= 0 && vi < Vertices.Length)
+            .Select(vi => Vertices[vi])
+            .ToArray();
+        if (poly.Length < 3) return true;
+        bool inside = false;
+        int n = poly.Length;
+        int j = n - 1;
+        for (int i = 0; i < n; i++)
+        {
+            float xi = poly[i].X, zi = poly[i].Z;
+            float xj = poly[j].X, zj = poly[j].Z;
+            if (((zi > z) != (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi))
+                inside = !inside;
+            j = i;
+        }
+        return inside;
+    }
+
+    public (float X, float Z) ClampToPolygonXZ(float x, float z)
+    {
+        if (Faces.Length == 0 || Vertices.Length == 0) return (x, z);
+        if (IsPointInsideXZ(x, z)) return (x, z);
+        var floorFace = FindFloorFace();
+        if (floorFace is null) return (x, z);
+        var poly = floorFace.VertexIndices
+            .Where(vi => vi >= 0 && vi < Vertices.Length)
+            .Select(vi => Vertices[vi])
+            .ToArray();
+        if (poly.Length < 3) return (x, z);
+        float minDistSq = float.MaxValue;
+        float bestX = x, bestZ = z;
+        for (int i = 0; i < poly.Length; i++)
+        {
+            int j = (i + 1) % poly.Length;
+            float x1 = poly[i].X, z1 = poly[i].Z;
+            float x2 = poly[j].X, z2 = poly[j].Z;
+            float dx = x2 - x1, dz = z2 - z1;
+            float lenSq = dx * dx + dz * dz;
+            float px = x1, pz = z1;
+            if (lenSq > 0.000001f)
+            {
+                float t = ((x - x1) * dx + (z - z1) * dz) / lenSq;
+                if (t >= 1f) { px = x2; pz = z2; }
+                else if (t > 0f) { px = x1 + t * dx; pz = z1 + t * dz; }
+            }
+            float distSq = (x - px) * (x - px) + (z - pz) * (z - pz);
+            if (distSq < minDistSq)
+            {
+                minDistSq = distSq;
+                bestX = px;
+                bestZ = pz;
+            }
+        }
+        return (bestX, bestZ);
+    }
+
+    public (float X, float Z) RayCastXZ(float startX, float startZ, float endX, float endZ)
+    {
+        if (Faces.Length == 0 || Vertices.Length == 0) return (endX, endZ);
+        var floorFace = FindFloorFace();
+        if (floorFace is null) return (endX, endZ);
+        var poly = floorFace.VertexIndices
+            .Where(vi => vi >= 0 && vi < Vertices.Length)
+            .Select(vi => Vertices[vi])
+            .ToArray();
+        if (poly.Length < 3) return (endX, endZ);
+
+        float dx = endX - startX;
+        float dz = endZ - startZ;
+        if (Math.Abs(dx) < 0.0001f && Math.Abs(dz) < 0.0001f) return (endX, endZ);
+
+        float closestU = 1.0f;
+        bool hit = false;
+
+        for (int i = 0; i < poly.Length; i++)
+        {
+            int j = (i + 1) % poly.Length;
+            float x1 = poly[i].X, z1 = poly[i].Z;
+            float x2 = poly[j].X, z2 = poly[j].Z;
+
+            float ex = x2 - x1;
+            float ez = z2 - z1;
+            float cx = x1 - startX;
+            float cz = z1 - startZ;
+
+            float V = -dx * ez + dz * ex;
+            if (Math.Abs(V) < 0.000001f) continue;
+
+            float uRay = (-cx * ez + cz * ex) / V;
+            float tWall = (dx * cz - dz * cx) / V;
+
+            if (uRay >= 0.0f && uRay <= closestU && tWall >= -0.0001f && tWall <= 1.0001f)
+            {
+                float testDist = 0.01f;
+                float rLen = (float)Math.Sqrt(dx * dx + dz * dz);
+                if (rLen > 0.0001f)
+                {
+                    float stepX = (dx / rLen) * testDist;
+                    float stepZ = (dz / rLen) * testDist;
+                    float testX = startX + dx * uRay + stepX;
+                    float testZ = startZ + dz * uRay + stepZ;
+
+                    bool isValid = IsPointInsideXZ(testX, testZ);
+                    if (!isValid)
+                    {
+                        for (int k = 0; k < poly.Length; k++)
+                        {
+                            int l = (k + 1) % poly.Length;
+                            float bx1 = poly[k].X, bz1 = poly[k].Z;
+                            float bx2 = poly[l].X, bz2 = poly[l].Z;
+                            float bdx = bx2 - bx1;
+                            float bdz = bz2 - bz1;
+                            float lenSq = bdx * bdx + bdz * bdz;
+                            if (lenSq < 0.0001f) continue;
+                            float t = ((testX - bx1) * bdx + (testZ - bz1) * bdz) / lenSq;
+                            t = Math.Max(0, Math.Min(1, t));
+                            float px = bx1 + t * bdx;
+                            float pz = bz1 + t * bdz;
+                            float distSq = (testX - px) * (testX - px) + (testZ - pz) * (testZ - pz);
+                            if (distSq < 0.000001f)
+                            {
+                                isValid = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isValid) continue;
+                }
+
+                closestU = uRay;
+                hit = true;
+            }
+        }
+
+        if (hit)
+        {
+            float hitX = startX + dx * closestU;
+            float hitZ = startZ + dz * closestU;
+            float pushDist = 0.001f;
+            if (closestU > 0.001f)
+            {
+                return (startX + dx * (closestU - pushDist), startZ + dz * (closestU - pushDist));
+            }
+            return (hitX, hitZ);
+        }
+
+        if (!IsPointInsideXZ(endX, endZ))
+            return ClampToPolygonXZ(endX, endZ);
+
+        return (endX, endZ);
+    }
+
     public static RoomGeometry CreateBox(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
         var geo = new RoomGeometry
         {
-            Name = "Box",
+            Name = Texts.PresetBox,
             ShapeId = "box",
             Vertices =
             [
@@ -129,7 +424,7 @@ public sealed class RoomGeometry
         float hw = w * 0.5f, hd = d * 0.5f;
         var geo = new RoomGeometry
         {
-            Name = "L-Shaped",
+            Name = Texts.PresetLShape,
             ShapeId = "lshaped",
             Vertices =
             [
@@ -161,16 +456,16 @@ public sealed class RoomGeometry
 
     public static RoomGeometry CreateCathedral(float w, float h, float d, float wallAbs, float floorAbs, float ceilAbs)
     {
-        float hc = h * 1.5f;
+        float hs = h * 0.6f;
         float hw = w * 0.5f;
         var geo = new RoomGeometry
         {
-            Name = "Cathedral",
+            Name = Texts.PresetCathedral,
             ShapeId = "cathedral",
             Vertices =
             [
-                new(0, 0, 0), new(w, 0, 0), new(w, h, 0), new(hw, hc, 0), new(0, h, 0),
-                new(0, 0, d), new(w, 0, d), new(w, h, d), new(hw, hc, d), new(0, h, d)
+                new(0, 0, 0), new(w, 0, 0), new(w, hs, 0), new(hw, h, 0), new(0, hs, 0),
+                new(0, 0, d), new(w, 0, d), new(w, hs, d), new(hw, h, d), new(0, hs, d)
             ],
             Materials =
             [
@@ -197,7 +492,7 @@ public sealed class RoomGeometry
         float hs = h * 0.8f;
         var geo = new RoomGeometry
         {
-            Name = "Studio",
+            Name = Texts.PresetStudio,
             ShapeId = "studio",
             Vertices =
             [

@@ -15,6 +15,8 @@ internal sealed class RoomVisualHost : FrameworkElement
     private readonly DrawingVisual _wallVisual = new();
     private readonly DrawingVisual _objectVisual = new();
     private readonly DrawingVisual _infoVisual = new();
+    private readonly DrawingVisual _gridVisual = new();
+    private readonly DrawingVisual _vertexVisual = new();
 
     private static readonly Typeface InfoTypeface = new("Segoe UI");
     private const double Dpi = 96.0;
@@ -26,14 +28,18 @@ internal sealed class RoomVisualHost : FrameworkElement
             _floorVisual,
             _wallVisual,
             _objectVisual,
-            _infoVisual
+            _infoVisual,
+            _gridVisual,
+            _vertexVisual
         };
     }
 
     protected override int VisualChildrenCount => _children.Count;
     protected override Visual GetVisualChild(int index) => _children[index];
 
-    public void Render(Camera3D camera, ThemePalette palette, RoomSnapshot snapshot, double viewWidth, double viewHeight, bool isSourceSelected, bool isListenerSelected)
+    public void Render(Camera3D camera, ThemePalette palette, RoomSnapshot snapshot, double viewWidth, double viewHeight,
+        bool isSourceSelected, bool isListenerSelected, bool showObjects = true,
+        bool showGrid = false, float gridSize = 1.0f, bool showDimensions = false)
     {
         if (viewWidth <= 0 || viewHeight <= 0) return;
 
@@ -41,8 +47,93 @@ internal sealed class RoomVisualHost : FrameworkElement
 
         RenderFloor(viewMat, palette, snapshot, viewWidth, viewHeight);
         RenderWalls(camera, viewMat, palette, snapshot, viewWidth, viewHeight);
-        RenderObjects(viewMat, palette, snapshot, viewWidth, viewHeight, isSourceSelected, isListenerSelected);
+
+        if (showObjects)
+            RenderObjects(viewMat, palette, snapshot, viewWidth, viewHeight, isSourceSelected, isListenerSelected);
+        else
+            ClearVisual(_objectVisual);
+
         RenderInfo(palette, snapshot, viewWidth, viewHeight);
+
+        if (showGrid || showDimensions)
+            RenderGridOverlay(camera, viewMat, palette, snapshot, viewWidth, viewHeight, showGrid, gridSize, showDimensions);
+        else
+            ClearVisual(_gridVisual);
+    }
+
+    public void RenderVertexOverlay(Camera3D camera, GeometryVertex[] vertices,
+        int[] faceHighlightedIndices, int selectedIndex, IEnumerable<int> selectedIndices, double viewWidth, double viewHeight,
+        RoomSnapshot? snap = null)
+    {
+        var selectedSet = new HashSet<int>(selectedIndices ?? Array.Empty<int>());
+        using var dc = _vertexVisual.RenderOpen();
+        if (vertices.Length == 0 || viewWidth <= 0 || viewHeight <= 0) return;
+
+        var viewMat = ProjectionMatrix.CreateViewMatrix(camera);
+
+        var normalBrush = MakeFrozenBrush(Color.FromArgb(210, 70, 130, 220));
+        var highlightBrush = MakeFrozenBrush(Color.FromArgb(230, 255, 195, 30));
+        var selectedBrush = MakeFrozenBrush(Color.FromRgb(240, 60, 60));
+
+        var outlinePen = new Pen(MakeFrozenBrush(Color.FromArgb(180, 0, 0, 0)), 1.0);
+        outlinePen.Freeze();
+        var selectedOutlinePen = new Pen(Brushes.White, 1.5);
+        selectedOutlinePen.Freeze();
+
+        if (selectedIndex >= 0 && selectedIndex < vertices.Length && snap.HasValue)
+        {
+            var sv = vertices[selectedIndex];
+            float rng = Math.Max(Math.Max(snap.Value.Width, snap.Value.Height), snap.Value.Depth) * 1.5f;
+            var xPen = FrozenPen(new SolidColorBrush(Color.FromArgb(160, 220, 60, 60)), 1.0);
+            var yPen = FrozenPen(new SolidColorBrush(Color.FromArgb(160, 68, 204, 136)), 1.0);
+            var zPen = FrozenPen(new SolidColorBrush(Color.FromArgb(160, 68, 136, 255)), 1.0);
+            DrawClippedLine(dc, xPen, new Vector3(-rng, sv.Y, sv.Z), new Vector3(rng, sv.Y, sv.Z), viewMat, viewWidth, viewHeight);
+            DrawClippedLine(dc, yPen, new Vector3(sv.X, -rng, sv.Z), new Vector3(sv.X, rng, sv.Z), viewMat, viewWidth, viewHeight);
+            DrawClippedLine(dc, zPen, new Vector3(sv.X, sv.Y, -rng), new Vector3(sv.X, sv.Y, rng), viewMat, viewWidth, viewHeight);
+        }
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            ref readonly var v = ref vertices[i];
+            var cam = Vector3.Transform(new Vector3(v.X, v.Y, v.Z), viewMat);
+            if (cam.Z > -ProjectionMatrix.NearPlane) continue;
+
+            var screen = ProjectionMatrix.ProjectToScreen(cam, viewWidth, viewHeight);
+
+            bool isSelected = selectedSet.Contains(i) || i == selectedIndex;
+            bool isHighlighted = ArrayContains(faceHighlightedIndices, i);
+
+            var brush = isSelected ? selectedBrush : (isHighlighted ? highlightBrush : normalBrush);
+            var pen = isSelected ? selectedOutlinePen : outlinePen;
+            double radius = isSelected ? 7.0 : (isHighlighted ? 6.0 : 4.5);
+
+            dc.DrawEllipse(brush, pen, screen, radius, radius);
+
+            if (isSelected || isHighlighted)
+            {
+                var labelBrush = isSelected ? Brushes.White : MakeFrozenBrush(Color.FromArgb(220, 40, 40, 40));
+                dc.DrawText(
+                    MakeText(i.ToString(), 8.5, labelBrush),
+                    new Point(screen.X + radius + 3, screen.Y - 5));
+            }
+        }
+    }
+
+    public void ClearVertexOverlay()
+    {
+        ClearVisual(_vertexVisual);
+    }
+
+    private static void ClearVisual(DrawingVisual visual)
+    {
+        using var dc = visual.RenderOpen();
+    }
+
+    private static bool ArrayContains(int[] arr, int value)
+    {
+        foreach (var x in arr)
+            if (x == value) return true;
+        return false;
     }
 
     private void RenderFloor(Matrix4x4 viewMat, ThemePalette palette, in RoomSnapshot snap, double w, double h)
@@ -51,6 +142,26 @@ internal sealed class RoomVisualHost : FrameworkElement
         if (snap.Width <= 0 || snap.Depth <= 0) return;
 
         var gridPen = GetMaterialPen(snap.FloorMat, 100, 0.8);
+
+        if (snap.Shape == SpaceAudio.Enums.RoomShape.Custom && snap.Geometry is { } cg && cg.Vertices.Length > 0)
+        {
+            float minX = cg.Vertices.Min(v => v.X), maxX2 = cg.Vertices.Max(v => v.X);
+            float minZ = cg.Vertices.Min(v => v.Z), maxZ2 = cg.Vertices.Max(v => v.Z);
+            float stepX = CalculateGridStep(maxX2 - minX);
+            float stepZ = CalculateGridStep(maxZ2 - minZ);
+            for (float t = minX; t <= maxX2 + 0.001f; t += stepX)
+            {
+                float x = Math.Min(t, maxX2);
+                DrawClippedLine(dc, gridPen, new Vector3(x, 0, minZ), new Vector3(x, 0, maxZ2), viewMat, w, h);
+            }
+            for (float t = minZ; t <= maxZ2 + 0.001f; t += stepZ)
+            {
+                float z = Math.Min(t, maxZ2);
+                DrawClippedLine(dc, gridPen, new Vector3(minX, 0, z), new Vector3(maxX2, 0, z), viewMat, w, h);
+            }
+            return;
+        }
+
         float maxW = snap.Width;
         float maxD = snap.Depth;
         float stepW = CalculateGridStep(maxW);
@@ -73,6 +184,7 @@ internal sealed class RoomVisualHost : FrameworkElement
             DrawClippedLine(dc, gridPen, new Vector3(0, 0, z), new Vector3(xEnd, 0, z), viewMat, w, h);
         }
     }
+
 
     private void RenderWalls(Camera3D camera, Matrix4x4 viewMat, ThemePalette palette, in RoomSnapshot snap, double w, double h)
     {
@@ -190,6 +302,12 @@ internal sealed class RoomVisualHost : FrameworkElement
             AddLine(new(0, 0, dd), new(0, hs, dd));
             AddLine(new(ww, 0, dd), new(ww, hs, dd));
         }
+        else if (snap.Shape == SpaceAudio.Enums.RoomShape.Custom && snap.Geometry is { } customGeo
+                 && customGeo.Vertices.Length >= 3 && customGeo.Faces.Length > 0)
+        {
+            RenderCustomGeometry(dc, viewMat, customGeo, snap, w, h);
+            return;
+        }
         else
         {
             AddFace(new(0, 0, 0), new(ww, 0, 0), new(ww, hh, 0), new(0, hh, 0), new(0, 0, -1));
@@ -238,9 +356,7 @@ internal sealed class RoomVisualHost : FrameworkElement
                 var pt0 = ProjectionMatrix.ProjectToScreen(clippedVertices[0], w, h);
                 ctx.BeginFigure(pt0, true, true);
                 for (int i = 1; i < nClipped; i++)
-                {
                     ctx.LineTo(ProjectionMatrix.ProjectToScreen(clippedVertices[i], w, h), true, false);
-                }
             }
             geo.Freeze();
             dc.DrawGeometry(wallBrush, edgePen, geo);
@@ -248,9 +364,7 @@ internal sealed class RoomVisualHost : FrameworkElement
 
         var cornerPen = GetMaterialPen(snap.WallMat, 150, 1.0);
         for (int i = 0; i < lCount; i++)
-        {
             DrawClippedLine(dc, cornerPen, lines[i].Item1, lines[i].Item2, viewMat, w, h);
-        }
     }
 
     private void RenderObjects(Matrix4x4 viewMat, ThemePalette palette, in RoomSnapshot snap, double w, double h, bool isSourceSelected, bool isListenerSelected)
@@ -329,7 +443,10 @@ internal sealed class RoomVisualHost : FrameworkElement
     private static SolidColorBrush BrightenBrush(SolidColorBrush b)
     {
         var c = b.Color;
-        var brush = new SolidColorBrush(Color.FromRgb((byte)Math.Min(255, c.R + 80), (byte)Math.Min(255, c.G + 80), (byte)Math.Min(255, c.B + 80)));
+        var brush = new SolidColorBrush(Color.FromRgb(
+            (byte)Math.Min(255, c.R + 80),
+            (byte)Math.Min(255, c.G + 80),
+            (byte)Math.Min(255, c.B + 80)));
         brush.Freeze();
         return brush;
     }
@@ -412,10 +529,204 @@ internal sealed class RoomVisualHost : FrameworkElement
         return 10.0f;
     }
 
+    private void RenderGridOverlay(Camera3D camera, Matrix4x4 viewMat, ThemePalette palette,
+        in RoomSnapshot snap, double w, double h, bool showGrid, float gridSize, bool showDimensions)
+    {
+        using var dc = _gridVisual.RenderOpen();
+
+        float w3 = snap.Width > 0 ? snap.Width : (snap.Geometry?.Vertices.Length > 0
+            ? snap.Geometry.Vertices.Max(v => v.X) : 8f);
+        float h3 = snap.Height > 0 ? snap.Height : (snap.Geometry?.Vertices.Length > 0
+            ? snap.Geometry.Vertices.Max(v => v.Y) : 3f);
+        float d3 = snap.Depth > 0 ? snap.Depth : (snap.Geometry?.Vertices.Length > 0
+            ? snap.Geometry.Vertices.Max(v => v.Z) : 6f);
+
+        var gridPen = new Pen(new SolidColorBrush(palette.InfoText.Color) { Opacity = 0.18 }, 0.7);
+        gridPen.DashStyle = DashStyles.Dot;
+        gridPen.Freeze();
+
+        var dimBrush = new SolidColorBrush(palette.InfoText.Color);
+        dimBrush.Freeze();
+
+        if (showGrid)
+        {
+            float gs = Math.Max(0.1f, gridSize);
+            for (float gx = 0; gx <= w3 + 0.001f; gx += gs)
+            {
+                float x = Math.Min(gx, w3);
+                for (float gy = 0; gy <= h3 + 0.001f; gy += gs)
+                {
+                    float y = Math.Min(gy, h3);
+                    DrawGridPoint(dc, new Vector3(x, y, 0), new Vector3(x, y, d3), viewMat, w, h, gridPen);
+                }
+            }
+            for (float gz = 0; gz <= d3 + 0.001f; gz += gs)
+            {
+                float z = Math.Min(gz, d3);
+                DrawClippedLine(dc, gridPen, new Vector3(0, 0, z), new Vector3(w3, 0, z), viewMat, w, h);
+                DrawClippedLine(dc, gridPen, new Vector3(0, h3, z), new Vector3(w3, h3, z), viewMat, w, h);
+            }
+        }
+
+        if (showDimensions)
+        {
+            IEnumerable<(Vector3 A, Vector3 B, string Label)> edgesToDraw;
+
+            if (snap.Shape == RoomShape.Custom && snap.Geometry is { } g && g.Vertices.Length > 0)
+            {
+                var edgeSet = new HashSet<(int, int)>();
+                var customEdges = new List<(Vector3 A, Vector3 B, string Label)>();
+                foreach (var face in g.Faces)
+                {
+                    if (face.VertexIndices.Length < 2) continue;
+                    for (int i = 0; i < face.VertexIndices.Length; i++)
+                    {
+                        int a = face.VertexIndices[i];
+                        int b = face.VertexIndices[(i + 1) % face.VertexIndices.Length];
+                        if (a < 0 || a >= g.Vertices.Length || b < 0 || b >= g.Vertices.Length) continue;
+                        var key = a < b ? (a, b) : (b, a);
+                        if (edgeSet.Add(key))
+                        {
+                            var va = g.Vertices[a];
+                            var vb = g.Vertices[b];
+                            float dist = Vector3.Distance(new Vector3(va.X, va.Y, va.Z), new Vector3(vb.X, vb.Y, vb.Z));
+                            if (dist > 0.001f)
+                            {
+                                customEdges.Add((new Vector3(va.X, va.Y, va.Z), new Vector3(vb.X, vb.Y, vb.Z), $"{dist:F3}m"));
+                            }
+                        }
+                    }
+                }
+                edgesToDraw = customEdges;
+            }
+            else
+            {
+                edgesToDraw = new (Vector3 A, Vector3 B, string Label)[]
+                {
+                    (new(0,0,0),   new(w3,0,0),  $"{w3:F3}m"),
+                    (new(0,h3,0),  new(w3,h3,0), $"{w3:F3}m"),
+                    (new(0,0,d3),  new(w3,0,d3), $"{w3:F3}m"),
+                    (new(0,h3,d3), new(w3,h3,d3),$"{w3:F3}m"),
+                    (new(0,0,0),   new(0,0,d3),  $"{d3:F3}m"),
+                    (new(w3,0,0),  new(w3,0,d3), $"{d3:F3}m"),
+                    (new(0,h3,0),  new(0,h3,d3), $"{d3:F3}m"),
+                    (new(w3,h3,0), new(w3,h3,d3),$"{d3:F3}m"),
+                    (new(0,0,0),   new(0,h3,0),  $"{h3:F3}m"),
+                    (new(w3,0,0),  new(w3,h3,0), $"{h3:F3}m"),
+                    (new(0,0,d3),  new(0,h3,d3), $"{h3:F3}m"),
+                    (new(w3,0,d3), new(w3,h3,d3),$"{h3:F3}m")
+                };
+            }
+
+            foreach (var (a, b, label) in edgesToDraw)
+            {
+                var ac = Vector3.Transform(a, viewMat);
+                var bc = Vector3.Transform(b, viewMat);
+                if (ac.Z > -ProjectionMatrix.NearPlane || bc.Z > -ProjectionMatrix.NearPlane) continue;
+                var pa = ProjectionMatrix.ProjectToScreen(ac, w, h);
+                var pb = ProjectionMatrix.ProjectToScreen(bc, w, h);
+                double mx = (pa.X + pb.X) * 0.5;
+                double my = (pa.Y + pb.Y) * 0.5;
+                dc.DrawText(MakeText(label, 9, dimBrush), new Point(mx + 2, my - 8));
+            }
+        }
+    }
+
+    private static void DrawGridPoint(DrawingContext dc, Vector3 a, Vector3 b, Matrix4x4 viewMat, double w, double h, Pen pen)
+    {
+        DrawClippedLine(dc, pen, a, b, viewMat, w, h);
+    }
+
+    private void RenderCustomGeometry(DrawingContext dc, Matrix4x4 viewMat, RoomGeometry geo, in RoomSnapshot snap, double w, double h)
+    {
+        WallMaterial wallMat = snap.WallMat;
+        var faceDataList = new List<(float depth, int faceIdx)>();
+        for (int fi = 0; fi < geo.Faces.Length; fi++)
+        {
+            var face = geo.Faces[fi];
+            if (face.VertexIndices.Length < 3) continue;
+            float cx = 0, cy = 0, cz = 0;
+            foreach (var vi in face.VertexIndices)
+            {
+                if (vi < 0 || vi >= geo.Vertices.Length) continue;
+                var sv = geo.Vertices[vi];
+                cx += sv.X; cy += sv.Y; cz += sv.Z;
+            }
+            float n = face.VertexIndices.Length;
+            var center = Vector3.Transform(new Vector3(cx / n, cy / n, cz / n), viewMat);
+            faceDataList.Add((-center.Z, fi));
+        }
+        faceDataList.Sort((a, b) => b.depth.CompareTo(a.depth));
+
+        Span<Vector3> camSpan = stackalloc Vector3[16];
+        Span<Vector3> clippedSpan = stackalloc Vector3[24];
+
+        foreach (var (_, fi) in faceDataList)
+        {
+            var face = geo.Faces[fi];
+            if (face.VertexIndices.Length < 3) continue;
+
+            WallMaterial mat = wallMat;
+            if (face.MaterialIndex >= 0 && face.MaterialIndex < geo.Materials.Length)
+            {
+                var mName = geo.Materials[face.MaterialIndex].Name.ToLowerInvariant();
+                if (mName.Contains("floor")) mat = WallMaterial.Wood;
+                else if (mName.Contains("ceil") || mName.Contains("ceiling")) mat = WallMaterial.Drywall;
+            }
+
+            int vCount = Math.Min(face.VertexIndices.Length, 16);
+            bool valid = true;
+            for (int i = 0; i < vCount; i++)
+            {
+                int vi = face.VertexIndices[i];
+                if (vi < 0 || vi >= geo.Vertices.Length) { valid = false; break; }
+                var sv = geo.Vertices[vi];
+                camSpan[i] = Vector3.Transform(new Vector3(sv.X, sv.Y, sv.Z), viewMat);
+            }
+            if (!valid) continue;
+
+            int nClipped = ProjectionMatrix.ClipPolygonZ(camSpan[..vCount], clippedSpan);
+            if (nClipped < 3) continue;
+
+            var wallBrush = GetMaterialBrush(mat, 40);
+            var edgePen = GetMaterialPen(mat, 160, 1.0);
+
+            var faceGeo = new StreamGeometry();
+            using (var ctx = faceGeo.Open())
+            {
+                ctx.BeginFigure(ProjectionMatrix.ProjectToScreen(clippedSpan[0], w, h), true, true);
+                for (int i = 1; i < nClipped; i++)
+                    ctx.LineTo(ProjectionMatrix.ProjectToScreen(clippedSpan[i], w, h), true, false);
+            }
+            faceGeo.Freeze();
+            dc.DrawGeometry(wallBrush, edgePen, faceGeo);
+        }
+
+        var edgeSet = new HashSet<(int, int)>();
+        var linePen = GetMaterialPen(wallMat, 180, 1.0);
+        foreach (var face in geo.Faces)
+        {
+            if (face.VertexIndices.Length < 2) continue;
+            for (int i = 0; i < face.VertexIndices.Length; i++)
+            {
+                int a = face.VertexIndices[i];
+                int b = face.VertexIndices[(i + 1) % face.VertexIndices.Length];
+                if (a < 0 || a >= geo.Vertices.Length || b < 0 || b >= geo.Vertices.Length) continue;
+                var key = a < b ? (a, b) : (b, a);
+                if (!edgeSet.Add(key)) continue;
+                var va = geo.Vertices[a];
+                var vb = geo.Vertices[b];
+                DrawClippedLine(dc, linePen, new Vector3(va.X, va.Y, va.Z), new Vector3(vb.X, vb.Y, vb.Z), viewMat, w, h);
+            }
+        }
+    }
+
+
+
     private static FormattedText MakeText(string text, double size, Brush brush)
     {
-        var ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, InfoTypeface, size, brush, Dpi);
-        return ft;
+        return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            InfoTypeface, size, brush, Dpi);
     }
 
     private static Pen FrozenPen(Brush brush, double thickness)
@@ -424,6 +735,13 @@ internal sealed class RoomVisualHost : FrameworkElement
         var pen = new Pen(brush, thickness);
         pen.Freeze();
         return pen;
+    }
+
+    private static SolidColorBrush MakeFrozenBrush(Color color)
+    {
+        var b = new SolidColorBrush(color);
+        b.Freeze();
+        return b;
     }
 
     private static Color GetMaterialColor(WallMaterial m) => m switch

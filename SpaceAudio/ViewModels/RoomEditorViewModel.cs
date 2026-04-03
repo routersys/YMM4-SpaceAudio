@@ -7,13 +7,15 @@ using SpaceAudio.Services;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Reflection;
-using System.Windows;
 using System.Windows.Input;
 
 namespace SpaceAudio.ViewModels;
 
 public sealed class RoomEditorViewModel : ViewModelBase
 {
+    private static readonly string _assemblyVersion =
+        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+
     private readonly IPresetService _presetService;
     private readonly IUserNotificationService _notifications;
     private readonly IUpdateService _updateService;
@@ -106,7 +108,7 @@ public sealed class RoomEditorViewModel : ViewModelBase
         private set => SetProperty(ref _selectedTarget, value);
     }
 
-    public string VersionText => $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"}";
+    public string VersionText => $"v{_assemblyVersion}";
 
     public bool HasUpdate
     {
@@ -317,12 +319,9 @@ public sealed class RoomEditorViewModel : ViewModelBase
 
     private void LoadPresets()
     {
-        Application.Current?.Dispatcher.Invoke(() =>
-        {
-            Presets.Clear();
-            foreach (var name in _presetService.GetAllPresetNames())
-                Presets.Add(_presetService.GetPresetInfo(name));
-        });
+        Presets.Clear();
+        foreach (var name in _presetService.GetAllPresetNames())
+            Presets.Add(_presetService.GetPresetInfo(name));
     }
 
     private void LoadPreset(object? parameter)

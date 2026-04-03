@@ -19,13 +19,18 @@ public sealed class SpaceAudioSettingsViewModel : ViewModelBase
 
     public ObservableCollection<PresetInfo> Presets { get; } = [];
     public ObservableCollection<string> AllPresetNames { get; } = [];
-    public IReadOnlyList<QualityItem> QualityOptions { get; } = [
+    public IReadOnlyList<QualityItem> QualityOptions { get; } =
+    [
         new(Texts.QualityEconomy, ReverbQuality.Economy),
         new(Texts.QualityStandard, ReverbQuality.Standard),
         new(Texts.QualityHigh, ReverbQuality.High)
     ];
 
-    public PresetInfo? SelectedPreset { get => _selectedPreset; set => SetProperty(ref _selectedPreset, value); }
+    public PresetInfo? SelectedPreset
+    {
+        get => _selectedPreset;
+        set => SetProperty(ref _selectedPreset, value);
+    }
 
     public QualityItem? SelectedQuality
     {
@@ -51,9 +56,11 @@ public sealed class SpaceAudioSettingsViewModel : ViewModelBase
 
     public ICommand DeleteCommand { get; }
 
-    public SpaceAudioSettingsViewModel()
+    public SpaceAudioSettingsViewModel() : this(ServiceLocator.PresetService) { }
+
+    public SpaceAudioSettingsViewModel(IPresetService presetService)
     {
-        _presetService = ServiceLocator.PresetService;
+        _presetService = presetService;
         _selectedQualityItem = QualityOptions.FirstOrDefault(q => q.Value == SpaceAudioSettings.Default.Quality) ?? QualityOptions[0];
         _presetService.PresetsChanged += (_, _) => LoadData();
         DeleteCommand = new RelayCommand(_ => DeletePreset(), _ => SelectedPreset is not null);
@@ -65,10 +72,14 @@ public sealed class SpaceAudioSettingsViewModel : ViewModelBase
         Presets.Clear();
         AllPresetNames.Clear();
         AllPresetNames.Add("");
-        var names = _presetService.GetAllPresetNames();
-        foreach (var name in names) { Presets.Add(_presetService.GetPresetInfo(name)); AllPresetNames.Add(name); }
-        var dp = SpaceAudioSettings.Default.DefaultPreset;
-        _defaultPreset = string.IsNullOrEmpty(dp) ? "" : dp;
+        foreach (var name in _presetService.GetAllPresetNames())
+        {
+            Presets.Add(_presetService.GetPresetInfo(name));
+            AllPresetNames.Add(name);
+        }
+        _defaultPreset = string.IsNullOrEmpty(SpaceAudioSettings.Default.DefaultPreset)
+            ? ""
+            : SpaceAudioSettings.Default.DefaultPreset;
         OnPropertyChanged(nameof(SelectedDefaultPreset));
     }
 

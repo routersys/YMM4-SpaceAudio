@@ -158,6 +158,16 @@
 <data name="AddVertex" xml:space="preserve"><value>頂点追加</value></data>
 <data name="RemoveVertex" xml:space="preserve"><value>頂点削除</value></data>
 <data name="AddFace" xml:space="preserve"><value>面追加</value></data>
+<data name="MenuExportBlueprint" xml:space="preserve"><value>設計図画像を書き出す</value></data>
+<data name="MenuImportBlueprint" xml:space="preserve"><value>設計図画像から読み込む</value></data>
+<data name="BlueprintErrorNoData" xml:space="preserve"><value>画像内に設計データが含まれていません。</value></data>
+<data name="BlueprintViewPlan" xml:space="preserve"><value>平面図</value></data>
+<data name="BlueprintViewFront" xml:space="preserve"><value>正面図</value></data>
+<data name="BlueprintViewSide" xml:space="preserve"><value>側面図</value></data>
+<data name="BlueprintProjectName" xml:space="preserve"><value>プロジェクト名</value></data>
+<data name="BlueprintDate" xml:space="preserve"><value>作成日</value></data>
+<data name="BlueprintUnnamed" xml:space="preserve"><value>名前なし (Unnamed)</value></data>
+<data name="BlueprintSystemName" xml:space="preserve"><value>SpaceAudio 設計図出力システム</value></data>
 <data name="RemoveFace" xml:space="preserve"><value>面削除</value></data>
 <data name="SaveGeometry" xml:space="preserve"><value>ジオメトリ保存</value></data>
 <data name="SaveGeometryTitle" xml:space="preserve"><value>ジオメトリの保存</value></data>
@@ -177,4 +187,35 @@
 <data name="AddMaterial" xml:space="preserve"><value>マテリアル追加</value></data>
 <data name="UpdateMaterial" xml:space="preserve"><value>更新</value></data>
 <data name="DeleteMaterialConfirm" xml:space="preserve"><value>マテリアル「{0}」を削除しますか？</value></data>
+<data name="VertexLegendSelected" xml:space="preserve"><value>● 青=選択中</value></data>
+<data name="VertexLegendFaceMember" xml:space="preserve"><value>● 黄=面の頂点</value></data>
+<data name="SelectedVertexCoordinates" xml:space="preserve"><value>選択中の頂点座標</value></data>
+<data name="FaceUsesVertices" xml:space="preserve"><value>面が使用する頂点:</value></data>
+<data name="HintDragRotate" xml:space="preserve"><value>ドラッグ: 回転</value></data>
+<data name="HintRightDragPan" xml:space="preserve"><value>右ドラッグ: 移動</value></data>
+<data name="HintScrollZoom" xml:space="preserve"><value>スクロール: ズーム</value></data>
+<data name="ShapePresets" xml:space="preserve"><value>形状プリセット</value></data>
+<data name="PresetBox" xml:space="preserve"><value>箱形</value></data>
+<data name="PresetLShape" xml:space="preserve"><value>L字型</value></data>
+<data name="PresetCathedral" xml:space="preserve"><value>大聖堂</value></data>
+<data name="PresetStudio" xml:space="preserve"><value>スタジオ</value></data>
+<data name="PresetTShape" xml:space="preserve"><value>T字型</value></data>
+<data name="PresetUShape" xml:space="preserve"><value>U字型</value></data>
+<data name="HintAxisLock" xml:space="preserve"><value>X/Y/Z:軸ロック</value></data>
+<data name="VertexEditTab" xml:space="preserve"><value>頂点</value></data>
+<data name="FaceEditTab" xml:space="preserve"><value>面</value></data>
+<data name="FaceMembership" xml:space="preserve"><value>面の頂点</value></data>
+<data name="MoveVertexUp" xml:space="preserve"><value>上へ移動</value></data>
+<data name="MoveVertexDown" xml:space="preserve"><value>下へ移動</value></data>
+<data name="FaceMaterial" xml:space="preserve"><value>面の素材</value></data>
+<data name="HintClickVertex" xml:space="preserve"><value>クリック:頂点選択</value></data>
+<data name="HintDragVertex" xml:space="preserve"><value>ドラッグ:頂点移動</value></data>
+<data name="HintCtrlClick" xml:space="preserve"><value>Ctrl+クリック:面切替</value></data>
+<data name="ShowGridLabel" xml:space="preserve"><value>グリッド表示</value></data>
+<data name="ShowDimensionsLabel" xml:space="preserve"><value>寸法表示</value></data>
+<data name="UndoLabel" xml:space="preserve"><value>元に戻す</value></data>
+<data name="RedoLabel" xml:space="preserve"><value>やり直し</value></data>
+<data name="FloorLabel" xml:space="preserve"><value>床</value></data>
+<data name="CeilingLabel" xml:space="preserve"><value>天井</value></data>
+<data name="WallLabel" xml:space="preserve"><value>壁</value></data>
 </root>

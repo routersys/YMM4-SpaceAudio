@@ -40,7 +40,17 @@ public sealed class MaterialManagerViewModel : ViewModelBase
     public float NewAbsorption
     {
         get => _newAbsorption;
-        set => SetProperty(ref _newAbsorption, Math.Clamp(value, 0.0f, 1.0f));
+        set
+        {
+            if (!SetProperty(ref _newAbsorption, Math.Clamp(value, 0.0f, 1.0f))) return;
+            OnPropertyChanged(nameof(NewAbsorptionDouble));
+        }
+    }
+
+    public double NewAbsorptionDouble
+    {
+        get => _newAbsorption;
+        set => NewAbsorption = (float)value;
     }
 
     public ICommand AddCommand { get; }

@@ -1,4 +1,4 @@
-﻿using SpaceAudio.Attributes;
+using SpaceAudio.Attributes;
 using SpaceAudio.Enums;
 using SpaceAudio.Localization;
 using SpaceAudio.Models;
@@ -102,13 +102,23 @@ public sealed class SpaceAudioEffect : AudioEffectBase
         return null;
     }
 
+    public RoomGeometry? ResolveScaledGeometry(float w, float h, float d)
+    {
+        var geo = ResolveGeometry();
+        if (geo is not null && _roomShape == RoomShape.Custom)
+        {
+            return geo.CloneAndScale(w, h, d);
+        }
+        return geo;
+    }
+
     public RoomSnapshot CreateSnapshot(long frame, long totalFrames, int hz)
     {
         float w = (float)RoomWidth.GetValue(frame, totalFrames, hz);
         float h = (float)RoomHeight.GetValue(frame, totalFrames, hz);
         float d = (float)RoomDepth.GetValue(frame, totalFrames, hz);
 
-        var geometry = ResolveGeometry();
+        var geometry = ResolveScaledGeometry(w, h, d);
         if (geometry is null && _roomShape != RoomShape.Rectangular)
         {
             geometry = RoomGeometry.FromShape(_roomShape, w, h, d,
@@ -117,14 +127,34 @@ public sealed class SpaceAudioEffect : AudioEffectBase
                 MaterialCoefficients.GetAbsorption(_ceilingMaterial));
         }
 
+        float sx = (float)SourceX.GetValue(frame, totalFrames, hz);
+        float sy = (float)SourceY.GetValue(frame, totalFrames, hz);
+        float sz = (float)SourceZ.GetValue(frame, totalFrames, hz);
+        float lx = (float)ListenerX.GetValue(frame, totalFrames, hz);
+        float ly = (float)ListenerY.GetValue(frame, totalFrames, hz);
+        float lz = (float)ListenerZ.GetValue(frame, totalFrames, hz);
+
+        if (geometry is not null)
+        {
+            var sc = geometry.ClampToPolygonXZ(sx, sz);
+            sx = sc.X; sz = sc.Z;
+            var lc = geometry.ClampToPolygonXZ(lx, lz);
+            lx = lc.X; lz = lc.Z;
+        }
+        else
+        {
+            sx = Math.Clamp(sx, 0, w);
+            sz = Math.Clamp(sz, 0, d);
+            lx = Math.Clamp(lx, 0, w);
+            lz = Math.Clamp(lz, 0, d);
+        }
+        sy = Math.Clamp(sy, 0, h);
+        ly = Math.Clamp(ly, 0, h);
+
         return new RoomSnapshot(
             w, h, d,
-            Math.Clamp((float)SourceX.GetValue(frame, totalFrames, hz), 0, w),
-            Math.Clamp((float)SourceY.GetValue(frame, totalFrames, hz), 0, h),
-            Math.Clamp((float)SourceZ.GetValue(frame, totalFrames, hz), 0, d),
-            Math.Clamp((float)ListenerX.GetValue(frame, totalFrames, hz), 0, w),
-            Math.Clamp((float)ListenerY.GetValue(frame, totalFrames, hz), 0, h),
-            Math.Clamp((float)ListenerZ.GetValue(frame, totalFrames, hz), 0, d),
+            sx, sy, sz,
+            lx, ly, lz,
             (float)PreDelayMs.GetValue(frame, totalFrames, hz),
             (float)DecayTime.GetValue(frame, totalFrames, hz),
             (float)HfDamping.GetValue(frame, totalFrames, hz),

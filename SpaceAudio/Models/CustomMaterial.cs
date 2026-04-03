@@ -1,4 +1,6 @@
-﻿namespace SpaceAudio.Models;
+﻿using SpaceAudio.Localization;
+
+namespace SpaceAudio.Models;
 
 public sealed class CustomMaterial
 {
@@ -6,6 +8,14 @@ public sealed class CustomMaterial
     public string Name { get; set; } = "";
     public float Absorption { get; set; } = 0.1f;
     public bool IsBuiltIn { get; set; }
+
+    public string LocalizedName => Name switch
+    {
+        "Floor" => Texts.FloorLabel,
+        "Ceiling" or "Ceil" => Texts.CeilingLabel,
+        "Wall" => Texts.WallLabel,
+        _ => Name
+    };
 
     public CustomMaterial() { }
 
