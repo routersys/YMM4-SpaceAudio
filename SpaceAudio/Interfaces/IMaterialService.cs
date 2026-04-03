@@ -10,4 +10,6 @@ public interface IMaterialService
     CustomMaterial? GetById(string id);
     bool Save(CustomMaterial material);
     void Delete(string id);
+    void MoveUp(string id);
+    void MoveDown(string id);
 }

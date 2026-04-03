@@ -225,6 +225,8 @@
 <data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
 <data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
 <data name="MaterialBandAbsorption" xml:space="preserve"><value>대역별 흡음률</value></data>
-<data name="MaterialBuiltInNote" xml:space="preserve"><value>기본 재질은 읽기 전용입니다</value></data>
 <data name="DuplicateMaterial" xml:space="preserve"><value>복제</value></data>
+<data name="MaterialColor" xml:space="preserve"><value>색상</value></data>
+<data name="NewMaterial" xml:space="preserve"><value>새 재질</value></data>
+<data name="DuplicateMaterialFormat" xml:space="preserve"><value>{0} (복사본)</value></data>
 </root>

@@ -60,7 +60,25 @@ internal sealed class MaterialService : FileBackedServiceBase, IMaterialService
     public IReadOnlyList<CustomMaterial> GetAll()
     {
         EnsureInitialized();
-        lock (SyncRoot) return [.. GetBuiltIn(), .. (_cache ?? [])];
+        lock (SyncRoot)
+        {
+            var builtIn = GetBuiltIn();
+            var list = new List<CustomMaterial>();
+            foreach (var b in builtIn)
+            {
+                var cached = _cache?.Find(x => x.Id == b.Id);
+                list.Add(cached ?? b);
+            }
+            if (_cache != null)
+            {
+                foreach (var c in _cache)
+                {
+                    if (!builtIn.Any(b => b.Id == c.Id))
+                        list.Add(c);
+                }
+            }
+            return list;
+        }
     }
 
     public IReadOnlyList<CustomMaterial> GetBuiltIn() =>
@@ -86,16 +104,20 @@ internal sealed class MaterialService : FileBackedServiceBase, IMaterialService
     public CustomMaterial? GetById(string id)
     {
         EnsureInitialized();
+        lock (SyncRoot)
+        {
+            var cached = _cache?.Find(m => m.Id == id);
+            if (cached != null) return cached;
+        }
         foreach (var m in GetBuiltIn())
             if (m.Id == id) return m;
-        lock (SyncRoot) return _cache?.Find(m => m.Id == id);
+        return null;
     }
 
     public bool Save(CustomMaterial material)
     {
         ArgumentNullException.ThrowIfNull(material);
         EnsureInitialized();
-        if (material.IsBuiltIn) return false;
         lock (SyncRoot)
         {
             _cache ??= [];
@@ -116,6 +138,68 @@ internal sealed class MaterialService : FileBackedServiceBase, IMaterialService
         {
             _cache?.RemoveAll(m => m.Id == id);
             Persist();
+        }
+        MaterialsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void MoveUp(string id)
+    {
+        EnsureInitialized();
+        lock (SyncRoot)
+        {
+            if (_cache == null) return;
+            int idx = _cache.FindIndex(m => m.Id == id);
+            if (idx < 0) return;
+            var builtInIds = new HashSet<string>(GetBuiltIn().Select(b => b.Id));
+            if (builtInIds.Contains(id)) return;
+
+            int prevIdx = -1;
+            for (int i = idx - 1; i >= 0; i--)
+            {
+                if (!builtInIds.Contains(_cache[i].Id))
+                {
+                    prevIdx = i;
+                    break;
+                }
+            }
+            if (prevIdx >= 0)
+            {
+                var temp = _cache[idx];
+                _cache[idx] = _cache[prevIdx];
+                _cache[prevIdx] = temp;
+                Persist();
+            }
+        }
+        MaterialsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void MoveDown(string id)
+    {
+        EnsureInitialized();
+        lock (SyncRoot)
+        {
+            if (_cache == null) return;
+            int idx = _cache.FindIndex(m => m.Id == id);
+            if (idx < 0) return;
+            var builtInIds = new HashSet<string>(GetBuiltIn().Select(b => b.Id));
+            if (builtInIds.Contains(id)) return;
+
+            int nextIdx = -1;
+            for (int i = idx + 1; i < _cache.Count; i++)
+            {
+                if (!builtInIds.Contains(_cache[i].Id))
+                {
+                    nextIdx = i;
+                    break;
+                }
+            }
+            if (nextIdx >= 0)
+            {
+                var temp = _cache[idx];
+                _cache[idx] = _cache[nextIdx];
+                _cache[nextIdx] = temp;
+                Persist();
+            }
         }
         MaterialsChanged?.Invoke(this, EventArgs.Empty);
     }

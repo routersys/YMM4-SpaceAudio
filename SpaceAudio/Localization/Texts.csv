@@ -165,5 +165,7 @@ MaterialBand1k,1kHz absorption band label,1 kHz,1 kHz,1 kHz,1 kHz,1 kHz,1 kHz,1 
 MaterialBand2k,2kHz absorption band label,2 kHz,2 kHz,2 kHz,2 kHz,2 kHz,2 kHz,2 kHz,2 kHz,
 MaterialBand4k,4kHz absorption band label,4 kHz,4 kHz,4 kHz,4 kHz,4 kHz,4 kHz,4 kHz,4 kHz,
 MaterialBandAbsorption,Band absorption section header,帯域別吸音率,Band Absorption,频带吸收率,頻帶吸收率,대역별 흡음률,Absorción por banda,امتصاص النطاق,Absorpsi Per Pita,
-MaterialBuiltInNote,Note for built-in materials,ビルトイン素材は読み取り専用です,Built-in materials are read-only,内置材质为只读,內建材質為唯讀,기본 재질은 읽기 전용입니다,El material integrado es de sólo lectura,المواد المدمجة للقراءة فقط,Material bawaan hanya dapat dibaca,
 DuplicateMaterial,Duplicate material button,複製,Duplicate,复制,複製,복제,Duplicar,تكرار,Duplikat,
+MaterialColor,Material color field label,表示色,Color,颜色,顏色,색상,Color,لون,Warna,
+NewMaterial,New material name,新規素材,New Material,新材质,新材質,새 재질,Nuevo Material,مادة جديدة,Material Baru,
+DuplicateMaterialFormat,Duplicate material name format,{0} (コピー),{0} (Copy),{0} (副本),{0} (副本),{0} (복사본),{0} (Copia),{0} (نسخة),{0} (Salinan),

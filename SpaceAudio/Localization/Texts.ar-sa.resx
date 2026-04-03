@@ -225,6 +225,8 @@
 <data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
 <data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
 <data name="MaterialBandAbsorption" xml:space="preserve"><value>امتصاص النطاق</value></data>
-<data name="MaterialBuiltInNote" xml:space="preserve"><value>المواد المدمجة للقراءة فقط</value></data>
 <data name="DuplicateMaterial" xml:space="preserve"><value>تكرار</value></data>
+<data name="MaterialColor" xml:space="preserve"><value>لون</value></data>
+<data name="NewMaterial" xml:space="preserve"><value>مادة جديدة</value></data>
+<data name="DuplicateMaterialFormat" xml:space="preserve"><value>{0} (نسخة)</value></data>
 </root>

@@ -225,6 +225,8 @@
 <data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
 <data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
 <data name="MaterialBandAbsorption" xml:space="preserve"><value>频带吸收率</value></data>
-<data name="MaterialBuiltInNote" xml:space="preserve"><value>内置材质为只读</value></data>
 <data name="DuplicateMaterial" xml:space="preserve"><value>复制</value></data>
+<data name="MaterialColor" xml:space="preserve"><value>颜色</value></data>
+<data name="NewMaterial" xml:space="preserve"><value>新材质</value></data>
+<data name="DuplicateMaterialFormat" xml:space="preserve"><value>{0} (副本)</value></data>
 </root>

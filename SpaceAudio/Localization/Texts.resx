@@ -225,6 +225,8 @@
 <data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
 <data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
 <data name="MaterialBandAbsorption" xml:space="preserve"><value>帯域別吸音率</value></data>
-<data name="MaterialBuiltInNote" xml:space="preserve"><value>ビルトイン素材は読み取り専用です</value></data>
 <data name="DuplicateMaterial" xml:space="preserve"><value>複製</value></data>
+<data name="MaterialColor" xml:space="preserve"><value>表示色</value></data>
+<data name="NewMaterial" xml:space="preserve"><value>新規素材</value></data>
+<data name="DuplicateMaterialFormat" xml:space="preserve"><value>{0} (コピー)</value></data>
 </root>

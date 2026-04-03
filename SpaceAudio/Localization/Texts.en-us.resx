@@ -225,6 +225,8 @@
 <data name="MaterialBand2k" xml:space="preserve"><value>2 kHz</value></data>
 <data name="MaterialBand4k" xml:space="preserve"><value>4 kHz</value></data>
 <data name="MaterialBandAbsorption" xml:space="preserve"><value>Band Absorption</value></data>
-<data name="MaterialBuiltInNote" xml:space="preserve"><value>Built-in materials are read-only</value></data>
 <data name="DuplicateMaterial" xml:space="preserve"><value>Duplicate</value></data>
+<data name="MaterialColor" xml:space="preserve"><value>Color</value></data>
+<data name="NewMaterial" xml:space="preserve"><value>New Material</value></data>
+<data name="DuplicateMaterialFormat" xml:space="preserve"><value>{0} (Copy)</value></data>
 </root>
