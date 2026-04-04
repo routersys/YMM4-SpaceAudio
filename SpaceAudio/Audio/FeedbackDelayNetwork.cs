@@ -12,7 +12,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     private const int Lines = 8;
     private const float ReferenceRate = 48000.0f;
     private const float SpeedOfSound = 343.0f;
-    private const float SmoothTimeSeconds = 0.001f;
+    private const float SmoothTimeSeconds = 0.05f;
 
     private static readonly int[] FallbackPrimeDelays = [1433, 1601, 1787, 1933, 2143, 2293, 2467, 2647];
     private static readonly float InvSqrt8 = 1.0f / MathF.Sqrt(Lines);
@@ -45,7 +45,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
             int scaled = Math.Max(1, (int)(FallbackPrimeDelays[i] * ratio));
             _targetDelays[i] = scaled;
             _currentDelays[i] = scaled;
-            _delays[i] = new DelayLine(scaled * 4);
+            _delays[i] = new DelayLine(sampleRate);
             _dampers[i] = new DampingFilter(0.3f);
             _feedbacks[i] = 0.84f;
             _lineDampingCoeffs[i] = 0.3f;
@@ -84,6 +84,14 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         {
             Array.Copy(_targetDelays, _currentDelays, Lines);
             _delaysInitialized = true;
+        }
+        else
+        {
+            for (int i = 0; i < Lines; i++)
+            {
+                if (MathF.Abs(_targetDelays[i] - _currentDelays[i]) > 100.0f)
+                    _currentDelays[i] = _targetDelays[i];
+            }
         }
 
         float invRt60 = -3.0f / rt60;
@@ -124,7 +132,7 @@ internal sealed class FeedbackDelayNetwork : IDisposable
             freq = Math.Max(freq, 5.0f);
             int delay = (int)(sampleRate / freq);
             delay = EnsureCoprime(delay, i);
-            _targetDelays[i] = Math.Clamp((float)delay, 1.0f, _delays[i].MaxDelay - 2);
+            _targetDelays[i] = Math.Clamp((float)delay, 2.0f, _delays[i].MaxDelay - 2);
         }
     }
 
@@ -136,8 +144,8 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 
         for (int i = 0; i < Lines; i++)
         {
-            float scaled = MathF.Max(1.0f, FallbackPrimeDelays[i] * ratio * roomScale);
-            _targetDelays[i] = Math.Clamp(scaled, 1.0f, _delays[i].MaxDelay - 2);
+            float scaled = MathF.Max(2.0f, FallbackPrimeDelays[i] * ratio * roomScale);
+            _targetDelays[i] = Math.Clamp(scaled, 2.0f, _delays[i].MaxDelay - 2);
         }
     }
 
@@ -168,6 +176,8 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         for (int i = 0; i < Lines; i++)
         {
             _currentDelays[i] += smooth * (_targetDelays[i] - _currentDelays[i]);
+            if (MathF.Abs(_targetDelays[i] - _currentDelays[i]) < 1e-4f)
+                _currentDelays[i] = _targetDelays[i];
             Unsafe.Add(ref readRef, i) = _delays[i].ReadInterpolated(_currentDelays[i]);
         }
 

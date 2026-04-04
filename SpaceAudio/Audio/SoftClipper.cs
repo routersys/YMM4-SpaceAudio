@@ -7,8 +7,7 @@ internal static class SoftClipper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Process(float input)
     {
-        if (input >= 1.0f) return 1.0f;
-        if (input <= -1.0f) return -1.0f;
-        return input - input * input * input * 0.333333f;
+        if (float.IsNaN(input) || float.IsInfinity(input)) return 0.0f;
+        return input;
     }
 }

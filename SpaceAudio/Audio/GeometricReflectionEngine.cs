@@ -13,7 +13,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
     private const int MaxReflections = 32;
     private const float SpeedOfSound = 343.0f;
     private const float HeadRadius = 0.085f;
-    private const float SmoothTimeSeconds = 0.001f;
+    private const float SmoothTimeSeconds = 0.05f;
 
     private readonly DelayLine _delayL;
     private readonly DelayLine _delayR;
@@ -67,6 +67,16 @@ internal sealed class GeometricReflectionEngine : IDisposable
             Array.Copy(_targetDelayL, _currentDelayL, MaxReflections);
             Array.Copy(_targetDelayR, _currentDelayR, MaxReflections);
             _delaysInitialized = true;
+        }
+        else
+        {
+            for (int i = 0; i < MaxReflections; i++)
+            {
+                if (MathF.Abs(_targetDelayL[i] - _currentDelayL[i]) > 100.0f)
+                    _currentDelayL[i] = _targetDelayL[i];
+                if (MathF.Abs(_targetDelayR[i] - _currentDelayR[i]) > 100.0f)
+                    _currentDelayR[i] = _targetDelayR[i];
+            }
         }
     }
 
@@ -173,8 +183,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
         else
             ComputeSimplePanning(distance, normDx, attenuation, idx);
 
-        if (_targetDelayL[idx] < 1.0f || _targetDelayL[idx] >= _delayL.MaxDelay - 2) return;
-        if (_targetDelayR[idx] < 1.0f || _targetDelayR[idx] >= _delayR.MaxDelay - 2) return;
+        if (_targetDelayL[idx] < 2.0f || _targetDelayL[idx] >= _delayL.MaxDelay - 2) return;
+        if (_targetDelayR[idx] < 2.0f || _targetDelayR[idx] >= _delayR.MaxDelay - 2) return;
 
         _tapFiltersL[idx].SetCoefficient(spectralDamping, distance);
         _tapFiltersR[idx].SetCoefficient(spectralDamping, distance);
@@ -197,8 +207,8 @@ internal sealed class GeometricReflectionEngine : IDisposable
         float dxR = imageSource.X - rightEarX;
         float distR = MathF.Sqrt(dxR * dxR + dyL * dyL + dzL * dzL);
 
-        _targetDelayL[idx] = MathF.Max(1.0f, distL / SpeedOfSound * _sampleRate);
-        _targetDelayR[idx] = MathF.Max(1.0f, distR / SpeedOfSound * _sampleRate);
+        _targetDelayL[idx] = MathF.Max(2.0f, distL / SpeedOfSound * _sampleRate);
+        _targetDelayR[idx] = MathF.Max(2.0f, distR / SpeedOfSound * _sampleRate);
 
         float angle = MathF.Asin(Math.Clamp(normDx, -1.0f, 1.0f));
         float ildFactor = 1.0f + 0.4f * MathF.Abs(angle) / (MathF.PI * 0.5f);
@@ -220,7 +230,7 @@ internal sealed class GeometricReflectionEngine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ComputeSimplePanning(float distance, float normDx, float attenuation, int idx)
     {
-        float samples = MathF.Max(1.0f, distance / SpeedOfSound * _sampleRate);
+        float samples = MathF.Max(2.0f, distance / SpeedOfSound * _sampleRate);
         _targetDelayL[idx] = samples;
         _targetDelayR[idx] = samples;
 
@@ -250,12 +260,22 @@ internal sealed class GeometricReflectionEngine : IDisposable
 
         for (int i = 0; i < count; i++)
         {
-            float curL = Unsafe.Add(ref cdL, i) + smooth * (Unsafe.Add(ref tdL, i) - Unsafe.Add(ref cdL, i));
-            float curR = Unsafe.Add(ref cdR, i) + smooth * (Unsafe.Add(ref tdR, i) - Unsafe.Add(ref cdR, i));
-            Unsafe.Add(ref cdL, i) = curL;
-            Unsafe.Add(ref cdR, i) = curR;
-            Unsafe.Add(ref sL, i) = _delayL.ReadAtInterpolated(curL, posL);
-            Unsafe.Add(ref sR, i) = _delayR.ReadAtInterpolated(curR, posR);
+            float targetL = Unsafe.Add(ref tdL, i);
+            float targetR = Unsafe.Add(ref tdR, i);
+            float currentL = Unsafe.Add(ref cdL, i);
+            float currentR = Unsafe.Add(ref cdR, i);
+
+            currentL += smooth * (targetL - currentL);
+            currentR += smooth * (targetR - currentR);
+
+            if (MathF.Abs(targetL - currentL) < 1e-4f) currentL = targetL;
+            if (MathF.Abs(targetR - currentR) < 1e-4f) currentR = targetR;
+
+            Unsafe.Add(ref cdL, i) = currentL;
+            Unsafe.Add(ref cdR, i) = currentR;
+
+            Unsafe.Add(ref sL, i) = _delayL.ReadAtInterpolated(currentL, posL);
+            Unsafe.Add(ref sR, i) = _delayR.ReadAtInterpolated(currentR, posR);
         }
 
         if (_quality != ReverbQuality.Economy)

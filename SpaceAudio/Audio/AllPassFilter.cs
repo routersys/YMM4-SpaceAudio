@@ -25,7 +25,9 @@ internal sealed class AllPassFilter : IDisposable
     {
         float delayed = _buffer[(_writePos - _delay) & _mask];
         float output = -_gain * input + delayed;
-        _buffer[_writePos & _mask] = input + _gain * delayed;
+        float feedback = input + _gain * delayed;
+        if (MathF.Abs(feedback) < 1e-9f) feedback = 0.0f;
+        _buffer[_writePos & _mask] = feedback;
         _writePos++;
         return output;
     }

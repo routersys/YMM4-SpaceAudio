@@ -16,6 +16,7 @@ internal sealed class DampingFilter : IDisposable
     public float Process(float input)
     {
         _state = input * (1.0f - _coefficient) + _state * _coefficient;
+        if (MathF.Abs(_state) < 1e-9f) _state = 0.0f;
         return _state;
     }
 

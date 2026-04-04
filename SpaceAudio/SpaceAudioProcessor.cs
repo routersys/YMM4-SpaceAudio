@@ -9,7 +9,7 @@ namespace SpaceAudio;
 
 internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 {
-    private const float PreDelaySmoothTimeSeconds = 0.001f;
+    private const float PreDelaySmoothTimeSeconds = 0.05f;
 
     private readonly SpaceAudioEffect _item;
 
@@ -60,33 +60,15 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 
         EnsureInitialized(hz);
 
-        if (HasAnimation())
-            ProcessAnimated(destBuffer, offset, frames, startFrame, totalFrames, hz);
-        else
-        {
-            var snapshot = _item.CreateSnapshot(startFrame, totalFrames, hz);
-            EnsureConfigured(in snapshot, hz);
+        var snapshot = _item.CreateSnapshot(startFrame, totalFrames, hz);
+        EnsureConfigured(in snapshot, hz);
 
-            if (_cachedQuality == ReverbQuality.High && _convolver is not null && _convolver.HasActiveIr)
-                ProcessConvolution(destBuffer, offset, frames);
-            else
-                ProcessStaticBlock(destBuffer, offset, frames);
-        }
+        if (_cachedQuality == ReverbQuality.High && _convolver is not null && _convolver.HasActiveIr)
+            ProcessConvolution(destBuffer, offset, frames);
+        else
+            ProcessStaticBlock(destBuffer, offset, frames);
 
         return readCount;
-    }
-
-    private void ProcessAnimated(float[] buffer, int offset, int frames, long startFrame, long totalFrames, int hz)
-    {
-        for (int i = 0; i < frames; i++)
-        {
-            long currentFrame = startFrame + i;
-            var snapshot = _item.CreateSnapshot(currentFrame, totalFrames, hz);
-            EnsureConfigured(in snapshot, hz);
-
-            int idx = offset + i * 2;
-            ProcessSingleFrame(buffer, idx);
-        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,6 +86,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         {
             int idx = offset + i * 2;
             _currentPreDelaySamples += smooth * (targetPreDelay - _currentPreDelaySamples);
+            if (MathF.Abs(targetPreDelay - _currentPreDelaySamples) < 1e-4f)
+                _currentPreDelaySamples = targetPreDelay;
+
             buffer[idx] = _preDelayL!.ProcessInterpolated(buffer[idx], _currentPreDelaySamples);
             buffer[idx + 1] = _preDelayR!.ProcessInterpolated(buffer[idx + 1], _currentPreDelaySamples);
         }
@@ -139,6 +124,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
             float inR = buffer[idx + 1];
 
             _currentPreDelaySamples += smooth * (targetPreDelay - _currentPreDelaySamples);
+            if (MathF.Abs(targetPreDelay - _currentPreDelaySamples) < 1e-4f)
+                _currentPreDelaySamples = targetPreDelay;
+
             float delayedL = _preDelayL!.ProcessInterpolated(inL, _currentPreDelaySamples);
             float delayedR = _preDelayR!.ProcessInterpolated(inR, _currentPreDelaySamples);
 
@@ -166,6 +154,9 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         float inR = buffer[idx + 1];
 
         _currentPreDelaySamples += _preDelaySmooth * (_targetPreDelaySamples - _currentPreDelaySamples);
+        if (MathF.Abs(_targetPreDelaySamples - _currentPreDelaySamples) < 1e-4f)
+            _currentPreDelaySamples = _targetPreDelaySamples;
+
         float delayedL = _preDelayL!.ProcessInterpolated(inL, _currentPreDelaySamples);
         float delayedR = _preDelayR!.ProcessInterpolated(inR, _currentPreDelaySamples);
 
@@ -202,7 +193,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _cachedLateGain = MathF.Pow(10.0f, snapshot.LateLevel / 20.0f);
         _cachedWet = snapshot.DryWetMix;
         _cachedDry = 1.0f - snapshot.DryWetMix;
-        _targetPreDelaySamples = Math.Clamp(snapshot.PreDelayMs * 0.001f * hz, 0.0f, _preDelayL!.MaxDelay - 2);
+        _targetPreDelaySamples = Math.Clamp(snapshot.PreDelayMs * 0.001f * hz, 2.0f, _preDelayL!.MaxDelay - 2);
         _cachedQuality = snapshot.Quality;
 
         if (firstConfigure)
@@ -250,30 +241,10 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _convolver = new OlaConvolver();
         _irPipeline = new AsyncIrPipeline(_convolver);
         _preDelaySmooth = 1.0f - MathF.Exp(-1.0f / (PreDelaySmoothTimeSeconds * hz));
-        _currentPreDelaySamples = 0.0f;
+        _currentPreDelaySamples = 1.0f;
 
         _lastHz = hz;
         _configured = false;
-    }
-
-    private bool HasAnimation()
-    {
-        return _item.RoomWidth.Values.Count > 1
-            || _item.RoomHeight.Values.Count > 1
-            || _item.RoomDepth.Values.Count > 1
-            || _item.SourceX.Values.Count > 1
-            || _item.SourceY.Values.Count > 1
-            || _item.SourceZ.Values.Count > 1
-            || _item.ListenerX.Values.Count > 1
-            || _item.ListenerY.Values.Count > 1
-            || _item.ListenerZ.Values.Count > 1
-            || _item.PreDelayMs.Values.Count > 1
-            || _item.DecayTime.Values.Count > 1
-            || _item.HfDamping.Values.Count > 1
-            || _item.Diffusion.Values.Count > 1
-            || _item.EarlyLevel.Values.Count > 1
-            || _item.LateLevel.Values.Count > 1
-            || _item.DryWetMix.Values.Count > 1;
     }
 
     protected override void seek(long position)
@@ -287,7 +258,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _hfFilterR?.Reset();
         _limiter?.Reset();
         _convolver?.Reset();
-        _currentPreDelaySamples = 0.0f;
+        _currentPreDelaySamples = 1.0f;
         _configured = false;
     }
 }

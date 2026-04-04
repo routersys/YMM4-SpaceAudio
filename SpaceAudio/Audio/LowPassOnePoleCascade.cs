@@ -26,6 +26,7 @@ internal sealed class LowPassOnePoleCascade : IDisposable
         for (int i = 0; i < Stages; i++)
         {
             _state[i] = x * (1.0f - _coeff) + _state[i] * _coeff;
+            if (MathF.Abs(_state[i]) < 1e-9f) _state[i] = 0.0f;
             x = _state[i];
         }
         return x;

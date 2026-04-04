@@ -18,6 +18,7 @@ internal struct ReflectionTapFilter
     public float Process(float input)
     {
         _state = input * (1.0f - _coeff) + _state * _coeff;
+        if (MathF.Abs(_state) < 1e-9f) _state = 0.0f;
         return _state;
     }
 

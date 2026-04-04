@@ -22,6 +22,7 @@ internal sealed class DelayLine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float Process(float input, int delaySamples)
     {
+        if (delaySamples < 2) delaySamples = 2;
         ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
         float output = Unsafe.Add(ref baseRef, (_writePos - delaySamples) & _mask);
         Unsafe.Add(ref baseRef, _writePos & _mask) = input;
@@ -31,15 +32,22 @@ internal sealed class DelayLine : IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float Read(int delaySamples)
-        => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (_writePos - delaySamples) & _mask);
+    {
+        if (delaySamples < 2) delaySamples = 2;
+        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (_writePos - delaySamples) & _mask);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ReadAt(int delaySamples, int basePos)
-        => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (basePos - delaySamples) & _mask);
+    {
+        if (delaySamples < 2) delaySamples = 2;
+        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), (basePos - delaySamples) & _mask);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ReadInterpolated(float delaySamples)
     {
+        if (delaySamples < 2.0f) delaySamples = 2.0f;
         ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
         int intDelay = (int)delaySamples;
         float frac = delaySamples - intDelay;
@@ -51,6 +59,7 @@ internal sealed class DelayLine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ReadAtInterpolated(float delaySamples, int basePos)
     {
+        if (delaySamples < 2.0f) delaySamples = 2.0f;
         ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
         int intDelay = (int)delaySamples;
         float frac = delaySamples - intDelay;
@@ -75,6 +84,7 @@ internal sealed class DelayLine : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ProcessInterpolated(float input, float delaySamples)
     {
+        if (delaySamples < 2.0f) delaySamples = 2.0f;
         ref float baseRef = ref MemoryMarshal.GetArrayDataReference(_buffer);
         int intDelay = (int)delaySamples;
         float frac = delaySamples - intDelay;
