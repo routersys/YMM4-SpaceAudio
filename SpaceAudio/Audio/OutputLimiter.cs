@@ -19,6 +19,8 @@ internal sealed class OutputLimiter
     private static float Limit(float input)
     {
         if (float.IsNaN(input) || float.IsInfinity(input)) return 0.0f;
+        if (input > 24.0f) return 24.0f;
+        if (input < -24.0f) return -24.0f;
         return input;
     }
 
