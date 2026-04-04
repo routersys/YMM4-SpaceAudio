@@ -10,8 +10,11 @@ namespace SpaceAudio;
 internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 {
     private const float PreDelaySmoothTimeSeconds = 0.05f;
+    private const float SpeedOfSound = 343.0f;
+    private const int MaxBlockFrames = 8192;
 
     private readonly SpaceAudioEffect _item;
+    private readonly float[] _dryBuffer = GC.AllocateArray<float>(MaxBlockFrames * 2, pinned: true);
 
     private GeometricReflectionEngine? _geoEngine;
     private FeedbackDelayNetwork? _fdn;
@@ -21,7 +24,6 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     private LowPassOnePoleCascade? _hfFilterR;
     private OutputLimiter? _limiter;
     private StereoWidener? _widener;
-
     private OlaConvolver? _convolver;
     private AsyncIrPipeline? _irPipeline;
 
@@ -74,13 +76,14 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ProcessConvolution(float[] buffer, int offset, int frames)
     {
+        if (frames > MaxBlockFrames) return;
+
         float dry = _cachedDry;
         float wet = _cachedWet;
         float targetPreDelay = _targetPreDelaySamples;
         float smooth = _preDelaySmooth;
 
-        float[] dryBuffer = new float[frames * 2];
-        Buffer.BlockCopy(buffer, offset * sizeof(float), dryBuffer, 0, frames * 2 * sizeof(float));
+        Buffer.BlockCopy(buffer, offset * sizeof(float), _dryBuffer, 0, frames * 2 * sizeof(float));
 
         for (int i = 0; i < frames; i++)
         {
@@ -98,8 +101,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         for (int i = 0; i < frames; i++)
         {
             int idx = offset + i * 2;
-            float dryL = dryBuffer[i * 2];
-            float dryR = dryBuffer[i * 2 + 1];
+            float dryL = _dryBuffer[i * 2];
+            float dryR = _dryBuffer[i * 2 + 1];
             buffer[idx] = SoftClipper.Process(dryL * dry + buffer[idx] * wet);
             buffer[idx + 1] = SoftClipper.Process(dryR * dry + buffer[idx + 1] * wet);
             _widener!.Process(ref buffer[idx], ref buffer[idx + 1]);
@@ -148,34 +151,6 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ProcessSingleFrame(float[] buffer, int idx)
-    {
-        float inL = buffer[idx];
-        float inR = buffer[idx + 1];
-
-        _currentPreDelaySamples += _preDelaySmooth * (_targetPreDelaySamples - _currentPreDelaySamples);
-        if (MathF.Abs(_targetPreDelaySamples - _currentPreDelaySamples) < 1e-4f)
-            _currentPreDelaySamples = _targetPreDelaySamples;
-
-        float delayedL = _preDelayL!.ProcessInterpolated(inL, _currentPreDelaySamples);
-        float delayedR = _preDelayR!.ProcessInterpolated(inR, _currentPreDelaySamples);
-
-        _geoEngine!.Process(delayedL, delayedR, out float earlyL, out float earlyR);
-        _fdn!.Process(delayedL, delayedR, out float lateL, out float lateR);
-
-        lateL = _hfFilterL!.Process(lateL);
-        lateR = _hfFilterR!.Process(lateR);
-
-        float wetL = earlyL * _cachedEarlyGain + lateL * _cachedLateGain;
-        float wetR = earlyR * _cachedEarlyGain + lateR * _cachedLateGain;
-
-        buffer[idx] = SoftClipper.Process(inL * _cachedDry + wetL * _cachedWet);
-        buffer[idx + 1] = SoftClipper.Process(inR * _cachedDry + wetR * _cachedWet);
-
-        _widener!.Process(ref buffer[idx], ref buffer[idx + 1]);
-        _limiter!.Process(ref buffer[idx], ref buffer[idx + 1]);
-    }
-
     private void EnsureConfigured(in RoomSnapshot snapshot, int hz)
     {
         if (snapshot == _lastSnapshot && _configured) return;
@@ -193,8 +168,15 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _cachedLateGain = MathF.Pow(10.0f, snapshot.LateLevel / 20.0f);
         _cachedWet = snapshot.DryWetMix;
         _cachedDry = 1.0f - snapshot.DryWetMix;
-        _targetPreDelaySamples = Math.Clamp(snapshot.PreDelayMs * 0.001f * hz, 2.0f, _preDelayL!.MaxDelay - 2);
         _cachedQuality = snapshot.Quality;
+
+        float directDist = RoomAcousticsCalculator.CalculateDirectDistance(in snapshot);
+        float physicsDelaySamples = directDist / SpeedOfSound * hz;
+        float userDelaySamples = snapshot.PreDelayMs * 0.001f * hz;
+        _targetPreDelaySamples = Math.Clamp(
+            physicsDelaySamples + userDelaySamples,
+            2.0f,
+            _preDelayL!.MaxDelay - 2);
 
         if (firstConfigure)
             _currentPreDelaySamples = _targetPreDelaySamples;
@@ -227,7 +209,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
         _convolver?.Dispose();
         _irPipeline?.Dispose();
 
-        int maxPreDelay = (int)(0.2f * hz) + 256;
+        int maxPreDelay = (int)(0.5f * hz) + 256;
         int maxEarlyDelay = (int)(0.1f * hz) + 256;
 
         _preDelayL = new DelayLine(maxPreDelay);

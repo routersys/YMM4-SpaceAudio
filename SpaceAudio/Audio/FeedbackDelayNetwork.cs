@@ -96,7 +96,6 @@ internal sealed class FeedbackDelayNetwork : IDisposable
 
         float invRt60 = -3.0f / rt60;
         float invSampleRate = 1.0f / sampleRate;
-
         float avgSpectralDamping = (snapshot.WallSpectralDamping + snapshot.FloorSpectralDamping + snapshot.CeilingSpectralDamping) / 3.0f;
 
         ref float fbRef = ref MemoryMarshal.GetArrayDataReference(_feedbacks);
@@ -172,14 +171,36 @@ internal sealed class FeedbackDelayNetwork : IDisposable
         float smooth = _delaySmooth;
 
         ref float readRef = ref MemoryMarshal.GetArrayDataReference(_readOut);
+        ref float targetRef = ref MemoryMarshal.GetArrayDataReference(_targetDelays);
+        ref float currentRef = ref MemoryMarshal.GetArrayDataReference(_currentDelays);
+
+        if (Avx.IsSupported)
+        {
+            var vTargets = Vector256.LoadUnsafe(ref targetRef);
+            var vCurrents = Vector256.LoadUnsafe(ref currentRef);
+            var vSmooth = Vector256.Create(smooth);
+            var vEps = Vector256.Create(1e-4f);
+
+            var vUpdated = Vector256.Add(vCurrents,
+                Vector256.Multiply(vSmooth, Vector256.Subtract(vTargets, vCurrents)));
+            var vAbsDiff = Vector256.Abs(Vector256.Subtract(vTargets, vUpdated));
+            vUpdated = Vector256.ConditionalSelect(
+                Vector256.LessThan(vAbsDiff, vEps), vTargets, vUpdated);
+            Vector256.StoreUnsafe(vUpdated, ref currentRef);
+        }
+        else
+        {
+            for (int i = 0; i < Lines; i++)
+            {
+                ref float cur = ref Unsafe.Add(ref currentRef, i);
+                float tgt = Unsafe.Add(ref targetRef, i);
+                cur += smooth * (tgt - cur);
+                if (MathF.Abs(tgt - cur) < 1e-4f) cur = tgt;
+            }
+        }
 
         for (int i = 0; i < Lines; i++)
-        {
-            _currentDelays[i] += smooth * (_targetDelays[i] - _currentDelays[i]);
-            if (MathF.Abs(_targetDelays[i] - _currentDelays[i]) < 1e-4f)
-                _currentDelays[i] = _targetDelays[i];
-            Unsafe.Add(ref readRef, i) = _delays[i].ReadInterpolated(_currentDelays[i]);
-        }
+            Unsafe.Add(ref readRef, i) = _delays[i].ReadInterpolated(Unsafe.Add(ref currentRef, i));
 
         HadamardMix(_readOut, _mixed);
 
@@ -204,57 +225,24 @@ internal sealed class FeedbackDelayNetwork : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void HadamardMix(float[] input, float[] output)
     {
-        if (Avx.IsSupported)
-        {
-            var v = Vector256.LoadUnsafe(ref MemoryMarshal.GetArrayDataReference(input));
+        float a = input[0] + input[4], e = input[0] - input[4];
+        float b = input[1] + input[5], f = input[1] - input[5];
+        float c = input[2] + input[6], g = input[2] - input[6];
+        float d = input[3] + input[7], h = input[3] - input[7];
 
-            var lo = v.GetLower();
-            var hi = v.GetUpper();
+        float p = a + c, q = a - c;
+        float r = b + d, s = b - d;
+        float t = e + g, u = e - g;
+        float v = f + h, w = f - h;
 
-            var sumVec = Vector128.Add(lo, hi);
-            var difVec = Vector128.Subtract(lo, hi);
-
-            var s0 = Vector128.Shuffle(sumVec, Vector128.Create(0, 1, 0, 1));
-            var s1 = Vector128.Shuffle(sumVec, Vector128.Create(2, 3, 2, 3));
-            var d0 = Vector128.Shuffle(difVec, Vector128.Create(0, 1, 0, 1));
-            var d1 = Vector128.Shuffle(difVec, Vector128.Create(2, 3, 2, 3));
-
-            var r0 = Vector128.Add(s0, s1);
-            var r1 = Vector128.Subtract(s0, s1);
-            var r2 = Vector128.Add(d0, d1);
-            var r3 = Vector128.Subtract(d0, d1);
-
-            var mask = Vector128.Create(InvSqrt8);
-            var out01 = Vector128.Shuffle(Vector128.Multiply(r0, mask), Vector128.Create(0, 1, 0, 1));
-            var out23 = Vector128.Shuffle(Vector128.Multiply(r1, mask), Vector128.Create(0, 1, 0, 1));
-            var out45 = Vector128.Shuffle(Vector128.Multiply(r2, mask), Vector128.Create(0, 1, 0, 1));
-            var out67 = Vector128.Shuffle(Vector128.Multiply(r3, mask), Vector128.Create(0, 1, 0, 1));
-
-            var resultLo = Vector128.Create(out01[0], out01[1], out23[0], out23[1]);
-            var resultHi = Vector128.Create(out45[0], out45[1], out67[0], out67[1]);
-
-            var result = Vector256.Create(resultLo, resultHi);
-            Vector256.StoreUnsafe(result, ref MemoryMarshal.GetArrayDataReference(output));
-            return;
-        }
-
-        float a = input[0] + input[4];
-        float b = input[1] + input[5];
-        float c = input[2] + input[6];
-        float d = input[3] + input[7];
-        float e = input[0] - input[4];
-        float f = input[1] - input[5];
-        float g = input[2] - input[6];
-        float h = input[3] - input[7];
-
-        output[0] = (a + c) * InvSqrt8;
-        output[1] = (b + d) * InvSqrt8;
-        output[2] = (a - c) * InvSqrt8;
-        output[3] = (b - d) * InvSqrt8;
-        output[4] = (e + g) * InvSqrt8;
-        output[5] = (f + h) * InvSqrt8;
-        output[6] = (e - g) * InvSqrt8;
-        output[7] = (f - h) * InvSqrt8;
+        output[0] = (p + r) * InvSqrt8;
+        output[1] = (p - r) * InvSqrt8;
+        output[2] = (q + s) * InvSqrt8;
+        output[3] = (q - s) * InvSqrt8;
+        output[4] = (t + v) * InvSqrt8;
+        output[5] = (t - v) * InvSqrt8;
+        output[6] = (u + w) * InvSqrt8;
+        output[7] = (u - w) * InvSqrt8;
     }
 
     public void Reset()

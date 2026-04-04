@@ -1,44 +1,35 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace SpaceAudio.Audio.Convolution;
 
 internal sealed class OlaConvolver : IDisposable
 {
     private const int BlockSize = 1024;
-
-    private float[]? _irSpecRe;
-    private float[]? _irSpecIm;
-    private float[]? _overlapL;
-    private float[]? _overlapR;
-    private float[]? _irSpecReR;
-    private float[]? _irSpecImR;
-    private int _fftSize;
-
-    private StereoImpulseResponse? _pendingIr;
-    private StereoImpulseResponse? _activeIr;
-
-    private readonly float[] _inputRe;
-    private readonly float[] _inputIm;
-    private readonly float[] _outRe;
-    private readonly float[] _outIm;
-
     private static readonly int MaxFftSize = CooleyTukeyFft.NextPowerOf2(BlockSize + 88200);
 
-    public OlaConvolver()
-    {
-        _inputRe = new float[MaxFftSize];
-        _inputIm = new float[MaxFftSize];
-        _outRe = new float[MaxFftSize];
-        _outIm = new float[MaxFftSize];
-    }
+    private readonly float[] _irSpecRe = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _irSpecIm = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _irSpecReR = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _irSpecImR = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _overlapL = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _overlapR = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _inputRe = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _inputIm = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _outRe = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _outIm = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _outReR = GC.AllocateArray<float>(MaxFftSize, pinned: true);
+    private readonly float[] _outImR = GC.AllocateArray<float>(MaxFftSize, pinned: true);
 
-    public void SubmitIr(StereoImpulseResponse ir)
-    {
-        Volatile.Write(ref _pendingIr, ir);
-    }
+    private int _fftSize;
+    private bool _hasActiveIr;
+    private StereoImpulseResponse? _pendingIr;
 
-    public bool HasActiveIr => _activeIr is not null;
+    public bool HasActiveIr => _hasActiveIr;
+
+    public void SubmitIr(StereoImpulseResponse ir) => Volatile.Write(ref _pendingIr, ir);
 
     private void ApplyPendingIr()
     {
@@ -48,28 +39,23 @@ internal sealed class OlaConvolver : IDisposable
         int irLen = pending.Length;
         int fftSize = CooleyTukeyFft.NextPowerOf2(BlockSize + irLen - 1);
         fftSize = Math.Min(fftSize, MaxFftSize);
-
-        float[] specReL = new float[fftSize];
-        float[] specImL = new float[fftSize];
-        float[] specReR = new float[fftSize];
-        float[] specImR = new float[fftSize];
-
         int copyLen = Math.Min(irLen, fftSize);
-        Buffer.BlockCopy(pending.Left, 0, specReL, 0, copyLen * sizeof(float));
-        Buffer.BlockCopy(pending.Right, 0, specReR, 0, copyLen * sizeof(float));
 
-        CooleyTukeyFft.Forward(specReL, specImL);
-        CooleyTukeyFft.Forward(specReR, specImR);
+        Array.Clear(_irSpecRe, 0, fftSize);
+        Array.Clear(_irSpecIm, 0, fftSize);
+        Array.Clear(_irSpecReR, 0, fftSize);
+        Array.Clear(_irSpecImR, 0, fftSize);
+        Array.Clear(_overlapL, 0, fftSize);
+        Array.Clear(_overlapR, 0, fftSize);
 
-        _irSpecRe = specReL;
-        _irSpecIm = specImL;
-        _irSpecReR = specReR;
-        _irSpecImR = specImR;
+        Buffer.BlockCopy(pending.Left, 0, _irSpecRe, 0, copyLen * sizeof(float));
+        Buffer.BlockCopy(pending.Right, 0, _irSpecReR, 0, copyLen * sizeof(float));
+
+        CooleyTukeyFft.Forward(_irSpecRe, _irSpecIm, fftSize);
+        CooleyTukeyFft.Forward(_irSpecReR, _irSpecImR, fftSize);
+
         _fftSize = fftSize;
-
-        _overlapL = new float[fftSize];
-        _overlapR = new float[fftSize];
-        _activeIr = pending;
+        _hasActiveIr = true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,7 +64,7 @@ internal sealed class OlaConvolver : IDisposable
         if (Volatile.Read(ref _pendingIr) is not null)
             ApplyPendingIr();
 
-        if (_activeIr is null || _irSpecRe is null) return;
+        if (!_hasActiveIr) return;
 
         int fftSize = _fftSize;
         int processed = 0;
@@ -100,64 +86,101 @@ internal sealed class OlaConvolver : IDisposable
         ref float inReRef = ref MemoryMarshal.GetArrayDataReference(_inputRe);
 
         for (int i = 0; i < frames; i++)
-        {
-            float l = Unsafe.Add(ref bufRef, offset + i * 2);
-            float r = Unsafe.Add(ref bufRef, offset + i * 2 + 1);
-            Unsafe.Add(ref inReRef, i) = (l + r) * 0.5f;
-        }
+            Unsafe.Add(ref inReRef, i) =
+                (Unsafe.Add(ref bufRef, offset + i * 2) + Unsafe.Add(ref bufRef, offset + i * 2 + 1)) * 0.5f;
 
-        CooleyTukeyFft.Forward(_inputRe, _inputIm);
+        CooleyTukeyFft.Forward(_inputRe, _inputIm, fftSize);
 
-        CooleyTukeyFft.MultiplyAccumulate(_outRe, _outIm, _inputRe, _inputIm, _irSpecRe!, _irSpecIm!);
-        CooleyTukeyFft.Inverse(_outRe, _outIm);
+        CooleyTukeyFft.MultiplyAccumulate(_outRe, _outIm, _inputRe, _inputIm, _irSpecRe, _irSpecIm, fftSize);
+        CooleyTukeyFft.Inverse(_outRe, _outIm, fftSize);
 
-        float[] outReR = new float[fftSize];
-        float[] outImR = new float[fftSize];
-        CooleyTukeyFft.MultiplyAccumulate(outReR, outImR, _inputRe, _inputIm, _irSpecReR!, _irSpecImR!);
-        CooleyTukeyFft.Inverse(outReR, outImR);
+        CooleyTukeyFft.MultiplyAccumulate(_outReR, _outImR, _inputRe, _inputIm, _irSpecReR, _irSpecImR, fftSize);
+        CooleyTukeyFft.Inverse(_outReR, _outImR, fftSize);
 
-        ref float overlapLRef = ref MemoryMarshal.GetArrayDataReference(_overlapL!);
-        ref float overlapRRef = ref MemoryMarshal.GetArrayDataReference(_overlapR!);
-        ref float outReRef2 = ref MemoryMarshal.GetArrayDataReference(_outRe);
-        ref float outReRRef = ref MemoryMarshal.GetArrayDataReference(outReR);
+        ref float overlapLRef = ref MemoryMarshal.GetArrayDataReference(_overlapL);
+        ref float overlapRRef = ref MemoryMarshal.GetArrayDataReference(_overlapR);
+        ref float outReRef = ref MemoryMarshal.GetArrayDataReference(_outRe);
+        ref float outReRRef = ref MemoryMarshal.GetArrayDataReference(_outReR);
 
         for (int i = 0; i < frames; i++)
         {
-            float outL = Unsafe.Add(ref outReRef2, i) + Unsafe.Add(ref overlapLRef, i);
-            float outR = Unsafe.Add(ref outReRRef, i) + Unsafe.Add(ref overlapRRef, i);
-            Unsafe.Add(ref bufRef, offset + i * 2) = outL;
-            Unsafe.Add(ref bufRef, offset + i * 2 + 1) = outR;
+            Unsafe.Add(ref bufRef, offset + i * 2) =
+                Unsafe.Add(ref outReRef, i) + Unsafe.Add(ref overlapLRef, i);
+            Unsafe.Add(ref bufRef, offset + i * 2 + 1) =
+                Unsafe.Add(ref outReRRef, i) + Unsafe.Add(ref overlapRRef, i);
         }
 
         int tailLen = fftSize - frames;
-        if (tailLen > 0)
+        if (tailLen <= 0) return;
+
+        ref float outReTail = ref Unsafe.Add(ref outReRef, frames);
+        ref float outReRTail = ref Unsafe.Add(ref outReRRef, frames);
+        ref float ovLTail = ref Unsafe.Add(ref overlapLRef, frames);
+        ref float ovRTail = ref Unsafe.Add(ref overlapRRef, frames);
+
+        int j = 0;
+
+        if (Avx.IsSupported && tailLen >= 8)
         {
-            for (int i = 0; i < tailLen; i++)
+            int simdEnd = tailLen & ~7;
+            for (; j < simdEnd; j += 8)
             {
-                Unsafe.Add(ref overlapLRef, i) =
-                    (i + frames < fftSize ? Unsafe.Add(ref outReRef2, i + frames) : 0)
-                    + (i < fftSize - frames ? Unsafe.Add(ref overlapLRef, i + frames) : 0);
-                Unsafe.Add(ref overlapRRef, i) =
-                    (i + frames < fftSize ? Unsafe.Add(ref outReRRef, i + frames) : 0)
-                    + (i < fftSize - frames ? Unsafe.Add(ref overlapRRef, i + frames) : 0);
+                Vector256.StoreUnsafe(
+                    Vector256.Add(
+                        Vector256.LoadUnsafe(ref Unsafe.Add(ref outReTail, j)),
+                        Vector256.LoadUnsafe(ref Unsafe.Add(ref ovLTail, j))),
+                    ref Unsafe.Add(ref overlapLRef, j));
+                Vector256.StoreUnsafe(
+                    Vector256.Add(
+                        Vector256.LoadUnsafe(ref Unsafe.Add(ref outReRTail, j)),
+                        Vector256.LoadUnsafe(ref Unsafe.Add(ref ovRTail, j))),
+                    ref Unsafe.Add(ref overlapRRef, j));
             }
+        }
+        else if (Sse.IsSupported && tailLen >= 4)
+        {
+            int simdEnd = tailLen & ~3;
+            for (; j < simdEnd; j += 4)
+            {
+                Vector128.StoreUnsafe(
+                    Vector128.Add(
+                        Vector128.LoadUnsafe(ref Unsafe.Add(ref outReTail, j)),
+                        Vector128.LoadUnsafe(ref Unsafe.Add(ref ovLTail, j))),
+                    ref Unsafe.Add(ref overlapLRef, j));
+                Vector128.StoreUnsafe(
+                    Vector128.Add(
+                        Vector128.LoadUnsafe(ref Unsafe.Add(ref outReRTail, j)),
+                        Vector128.LoadUnsafe(ref Unsafe.Add(ref ovRTail, j))),
+                    ref Unsafe.Add(ref overlapRRef, j));
+            }
+        }
+
+        for (; j < tailLen; j++)
+        {
+            Unsafe.Add(ref overlapLRef, j) =
+                Unsafe.Add(ref outReTail, j) + Unsafe.Add(ref ovLTail, j);
+            Unsafe.Add(ref overlapRRef, j) =
+                Unsafe.Add(ref outReRTail, j) + Unsafe.Add(ref ovRTail, j);
         }
     }
 
     public void Reset()
     {
         _pendingIr = null;
-        _activeIr = null;
-        _irSpecRe = null;
-        _irSpecIm = null;
-        _irSpecReR = null;
-        _irSpecImR = null;
-        _overlapL = null;
-        _overlapR = null;
+        _hasActiveIr = false;
+        _fftSize = 0;
+        Array.Clear(_irSpecRe);
+        Array.Clear(_irSpecIm);
+        Array.Clear(_irSpecReR);
+        Array.Clear(_irSpecImR);
+        Array.Clear(_overlapL);
+        Array.Clear(_overlapR);
         Array.Clear(_inputRe);
         Array.Clear(_inputIm);
         Array.Clear(_outRe);
         Array.Clear(_outIm);
+        Array.Clear(_outReR);
+        Array.Clear(_outImR);
     }
 
     public void Dispose() => Reset();
