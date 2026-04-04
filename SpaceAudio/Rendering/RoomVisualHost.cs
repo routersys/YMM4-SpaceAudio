@@ -455,40 +455,75 @@ internal sealed class RoomVisualHost : FrameworkElement
 
     private static void RenderAxisIndicator(DrawingContext dc, Matrix4x4 viewMat, ThemePalette palette, double w, double h)
     {
-        double ax = 32, ay = h - 32;
-        float len = 18.0f;
+        double ax = 36, ay = h - 36;
+        float len = 20.0f;
 
-        var o = Vector3.Transform(Vector3.Zero, viewMat);
-        var xE = Vector3.Transform(new Vector3(1, 0, 0), viewMat);
-        var yE = Vector3.Transform(new Vector3(0, 1, 0), viewMat);
-        var zE = Vector3.Transform(new Vector3(0, 0, 1), viewMat);
+        var tx = Vector3.TransformNormal(new Vector3(1, 0, 0), viewMat);
+        var ty = Vector3.TransformNormal(new Vector3(0, 1, 0), viewMat);
+        var tz = Vector3.TransformNormal(new Vector3(0, 0, 1), viewMat);
 
-        if (o.Z > -ProjectionMatrix.NearPlane) return;
+        (string Label, Vector3 Vec, Color Col)[] axes =
+        [
+            ("X", tx, Color.FromRgb(220, 60, 60)),
+            ("Y", ty, Color.FromRgb(60, 180, 60)),
+            ("Z", tz, Color.FromRgb(60, 100, 220))
+        ];
 
-        var po = ProjectionMatrix.ProjectToScreen(o, w, h);
-        var px = ProjectionMatrix.ProjectToScreen(xE, w, h);
-        var py = ProjectionMatrix.ProjectToScreen(yE, w, h);
-        var pz = ProjectionMatrix.ProjectToScreen(zE, w, h);
+        Array.Sort(axes, (a, b) => a.Vec.Z.CompareTo(b.Vec.Z));
 
-        double dxX = px.X - po.X, dyX = px.Y - po.Y;
-        double dxY = py.X - po.X, dyY = py.Y - po.Y;
-        double dxZ = pz.X - po.X, dyZ = pz.Y - po.Y;
+        Span<Point> drawnLabels = stackalloc Point[3];
+        int drawnCount = 0;
 
-        NormalizeDir(ref dxX, ref dyX, len);
-        NormalizeDir(ref dxY, ref dyY, len);
-        NormalizeDir(ref dxZ, ref dyZ, len);
+        foreach (var axis in axes)
+        {
+            double dx = axis.Vec.X * len;
+            double dy = -axis.Vec.Y * len;
 
-        var xPen = FrozenPen(new SolidColorBrush(Color.FromRgb(220, 60, 60)), 1.5);
-        var yPen = FrozenPen(new SolidColorBrush(Color.FromRgb(60, 180, 60)), 1.5);
-        var zPen = FrozenPen(new SolidColorBrush(Color.FromRgb(60, 100, 220)), 1.5);
+            var pen = FrozenPen(MakeFrozenBrush(axis.Col), 1.5);
 
-        dc.DrawLine(xPen, new Point(ax, ay), new Point(ax + dxX, ay + dyX));
-        dc.DrawLine(yPen, new Point(ax, ay), new Point(ax + dxY, ay + dyY));
-        dc.DrawLine(zPen, new Point(ax, ay), new Point(ax + dxZ, ay + dyZ));
+            dc.DrawLine(pen, new Point(ax, ay), new Point(ax + dx, ay + dy));
 
-        dc.DrawText(MakeText("X", 8, xPen.Brush), new Point(ax + dxX + 2, ay + dyX - 5));
-        dc.DrawText(MakeText("Y", 8, yPen.Brush), new Point(ax + dxY + 2, ay + dyY - 5));
-        dc.DrawText(MakeText("Z", 8, zPen.Brush), new Point(ax + dxZ + 2, ay + dyZ - 5));
+            double nx = axis.Vec.X;
+            double ny = -axis.Vec.Y;
+            double mag = Math.Sqrt(nx * nx + ny * ny);
+
+            if (mag > 0.001)
+            {
+                nx /= mag;
+                ny /= mag;
+            }
+            else
+            {
+                nx = 0.707;
+                ny = 0.707;
+            }
+
+            double padding = 12.0;
+            double labelX = ax + dx + nx * padding - 4.0;
+            double labelY = ay + dy + ny * padding - 6.0;
+
+            for (int loop = 0; loop < 2; loop++)
+            {
+                for (int i = 0; i < drawnCount; i++)
+                {
+                    double ox = labelX - drawnLabels[i].X;
+                    double oy = labelY - drawnLabels[i].Y;
+                    double dist = Math.Sqrt(ox * ox + oy * oy);
+                    if (dist < 12.0 && dist > 0.001)
+                    {
+                        labelX += (ox / dist) * (12.0 - dist);
+                        labelY += (oy / dist) * (12.0 - dist);
+                    }
+                    else if (dist <= 0.001)
+                    {
+                        labelX += 12.0;
+                    }
+                }
+            }
+
+            drawnLabels[drawnCount++] = new Point(labelX, labelY);
+            dc.DrawText(MakeText(axis.Label, 10.0, pen.Brush), new Point(labelX, labelY));
+        }
     }
 
     private static void NormalizeDir(ref double dx, ref double dy, float length)
