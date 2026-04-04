@@ -525,9 +525,9 @@ public sealed class RoomShapeEditorViewModel : ViewModelBase
     {
         PushUndo();
         var mats = ResolvePresetMaterials();
-        int matFloor = 0;
-        int matCeil = mats.Length > 1 ? 1 : 0;
-        int matWall = mats.Length > 2 ? 2 : 0;
+        int matWall = 0;
+        int matFloor = mats.Length > 1 ? 1 : 0;
+        int matCeil = mats.Length > 2 ? 2 : 0;
 
         var verts = new GeometryVertex[]
         {
@@ -584,7 +584,7 @@ public sealed class RoomShapeEditorViewModel : ViewModelBase
     {
         PushUndo();
         var mats = ResolvePresetMaterials();
-        int mF = 0, mC = mats.Length > 1 ? 1 : 0, mW = mats.Length > 2 ? 2 : 0;
+        int mW = 0, mF = mats.Length > 1 ? 1 : 0, mC = mats.Length > 2 ? 2 : 0;
         var verts = new GeometryVertex[]
         {
             new(0f,0f,0f),   new(12f,0f,0f),  new(12f,0f,4f),
@@ -614,7 +614,7 @@ public sealed class RoomShapeEditorViewModel : ViewModelBase
     {
         PushUndo();
         var mats = ResolvePresetMaterials();
-        int mF = 0, mC = mats.Length > 1 ? 1 : 0, mW = mats.Length > 2 ? 2 : 0;
+        int mW = 0, mF = mats.Length > 1 ? 1 : 0, mC = mats.Length > 2 ? 2 : 0;
         var verts = new GeometryVertex[]
         {
             new(0f,0f,0f),  new(3f,0f,0f),  new(3f,0f,6f),
@@ -645,9 +645,9 @@ public sealed class RoomShapeEditorViewModel : ViewModelBase
         if (_geometry.Materials.Length >= 3) return _geometry.Materials;
         return
         [
+            new CustomMaterial("wall_p", "Wall", 0.12f),
             new CustomMaterial("floor_p", "Floor", 0.10f),
             new CustomMaterial("ceil_p", "Ceiling", 0.12f),
-            new CustomMaterial("wall_p", "Wall", 0.12f),
         ];
     }
 
