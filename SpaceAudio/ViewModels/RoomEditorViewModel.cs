@@ -34,6 +34,10 @@ public sealed class RoomEditorViewModel : ViewModelBase
     private string _updateUrl = string.Empty;
     private bool _hasUpdate;
 
+    private long _displayFrame;
+    private long _totalDisplayFrames;
+    private int _displayFps = 30;
+
     public event EventHandler? RequestRedraw;
     public event EventHandler? BeginEdit;
     public event EventHandler? EndEdit;
@@ -65,6 +69,8 @@ public sealed class RoomEditorViewModel : ViewModelBase
             UpdateSelectedTarget();
         }
     }
+
+    public TimelineViewModel Timeline { get; }
 
     public string SelectedPresetName
     {
@@ -161,6 +167,8 @@ public sealed class RoomEditorViewModel : ViewModelBase
         _geometryService = geometryService;
         _presetService.PresetsChanged += (_, _) => LoadPresets();
 
+        Timeline = new TimelineViewModel(ServiceLocator.TimelineService);
+
         SavePresetCommand = new AsyncRelayCommand(_ => SavePresetAsync());
         LoadPresetCommand = new RelayCommand(LoadPreset, p => p is PresetInfo);
         DeletePresetCommand = new AsyncRelayCommand(DeletePresetAsync, p => p is PresetInfo);
@@ -245,6 +253,15 @@ public sealed class RoomEditorViewModel : ViewModelBase
         _ = CheckForUpdatesAsync();
     }
 
+    public bool SyncTimeline(long displayFrame, long totalFrames, int fps)
+    {
+        bool changed = _displayFrame != displayFrame || _totalDisplayFrames != totalFrames || _displayFps != fps;
+        _displayFrame = displayFrame;
+        _totalDisplayFrames = totalFrames;
+        _displayFps = fps;
+        return changed;
+    }
+
     public EditScope CreateEditScope() => EditScope.Begin(
         () => BeginEdit?.Invoke(this, EventArgs.Empty),
         () => EndEdit?.Invoke(this, EventArgs.Empty));
@@ -254,7 +271,7 @@ public sealed class RoomEditorViewModel : ViewModelBase
     public RoomSnapshot CreateSnapshotFromEffect()
     {
         if (_effect is null) return default;
-        return _effect.CreateSnapshot(0, 1, 60);
+        return _effect.CreateSnapshot(_displayFrame, Math.Max(_totalDisplayFrames, 1L), Math.Max(_displayFps, 1));
     }
 
     public RoomConfiguration ToConfiguration()

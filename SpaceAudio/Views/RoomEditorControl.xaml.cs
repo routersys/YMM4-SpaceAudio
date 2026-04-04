@@ -119,6 +119,9 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
     {
         UpdateTheme();
         ResetCamera();
+        TimelineOverlay.SeekStarted += OnTimelineSeekStarted;
+        TimelineOverlay.SeekChanged += OnTimelineSeekChanged;
+        TimelineOverlay.SeekEnded += OnTimelineSeekEnded;
         CompositionTarget.Rendering += OnRenderFrame;
         _needsRedraw = true;
     }
@@ -126,8 +129,13 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         CompositionTarget.Rendering -= OnRenderFrame;
+        TimelineOverlay.SeekStarted -= OnTimelineSeekStarted;
+        TimelineOverlay.SeekChanged -= OnTimelineSeekChanged;
+        TimelineOverlay.SeekEnded -= OnTimelineSeekEnded;
+
         if (_effect is INotifyPropertyChanged npc)
             npc.PropertyChanged -= OnEffectPropertyChanged;
+
         _shapeEditorWindow?.Close();
         _shapeEditorWindow = null;
         _materialManagerWindow?.Close();
@@ -136,10 +144,44 @@ public partial class RoomEditorControl : UserControl, IPropertyEditorControl
 
     private void OnRenderFrame(object? sender, EventArgs e)
     {
-        if (!IsLoaded || !IsVisible || !_needsRedraw) return;
+        if (!IsLoaded || !IsVisible) return;
+        UpdateTimeline();
+        if (!_needsRedraw) return;
         EnforceConstraints();
         _needsRedraw = false;
         DrawAll();
+    }
+
+    private void UpdateTimeline()
+    {
+        var service = ServiceLocator.TimelineService;
+        var timeline = ViewModel.Timeline;
+        if (service.IsPlaying)
+            timeline.ReleasePin();
+        long displayFrame = timeline.DisplayFrame;
+        long totalFrames = service.TotalFrames;
+        int fps = service.Fps > 0 ? service.Fps : 30;
+        TimelineOverlay.Update(displayFrame, totalFrames, fps, service.IsPlaying);
+        if (ViewModel.SyncTimeline(displayFrame, totalFrames, fps))
+            _needsRedraw = true;
+    }
+
+    private void OnTimelineSeekStarted(long frame)
+    {
+        ViewModel.Timeline.BeginSeek(frame);
+        _needsRedraw = true;
+    }
+
+    private void OnTimelineSeekChanged(long frame)
+    {
+        ViewModel.Timeline.UpdateSeek(frame);
+        _needsRedraw = true;
+    }
+
+    private void OnTimelineSeekEnded(long frame)
+    {
+        ViewModel.Timeline.EndSeek();
+        _needsRedraw = true;
     }
 
     private void EnforceConstraints()

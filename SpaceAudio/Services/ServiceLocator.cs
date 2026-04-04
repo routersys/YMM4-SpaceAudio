@@ -28,6 +28,9 @@ public static class ServiceLocator
     private static readonly Lazy<IMaterialService> LazyMaterial =
         new(() => new MaterialService(LazyNotification.Value));
 
+    private static readonly Lazy<IPlaybackTimelineService> LazyTimeline =
+        new(() => new PlaybackTimelineService());
+
     public static void RegisterToastPresenter(IToastPresenter presenter)
     {
         ArgumentNullException.ThrowIfNull(presenter);
@@ -42,4 +45,5 @@ public static class ServiceLocator
     public static IUpdateService UpdateService => LazyUpdate.Value;
     public static IRoomGeometryService GeometryService => LazyGeometry.Value;
     public static IMaterialService MaterialService => LazyMaterial.Value;
+    public static IPlaybackTimelineService TimelineService => LazyTimeline.Value;
 }

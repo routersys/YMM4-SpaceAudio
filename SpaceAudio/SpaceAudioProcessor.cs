@@ -12,8 +12,10 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     private const float PreDelaySmoothTimeSeconds = 0.05f;
     private const float SpeedOfSound = 343.0f;
     private const int MaxBlockFrames = 8192;
+    private const int TimelineFps = 30;
 
     private readonly SpaceAudioEffect _item;
+    private readonly TimeSpan _itemDuration;
     private readonly float[] _dryBuffer = GC.AllocateArray<float>(MaxBlockFrames * 2, pinned: true);
 
     private GeometricReflectionEngine? _geoEngine;
@@ -46,6 +48,7 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     public SpaceAudioProcessor(SpaceAudioEffect item, TimeSpan duration)
     {
         _item = item;
+        _itemDuration = duration;
     }
 
     protected override int read(float[] destBuffer, int offset, int count)
@@ -57,12 +60,17 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
 
         int frames = readCount / 2;
         long startFrame = Position / 2;
-        long totalFrames = Duration / 2;
         int hz = Hz;
+        long itemTotalSamples = (long)(_itemDuration.TotalSeconds * hz);
+        long blockMs = hz > 0 ? (long)((double)readCount / 2 / hz * 1000.0) : 0L;
+
+        long currentTimelineFrame = hz > 0 ? (long)((double)Position / 2 / hz * TimelineFps) : 0L;
+        long totalTimelineFrames = (long)(_itemDuration.TotalSeconds * TimelineFps);
+        Services.ServiceLocator.TimelineService.UpdateFromProcessor(currentTimelineFrame, totalTimelineFrames, TimelineFps, blockMs);
 
         EnsureInitialized(hz);
 
-        var snapshot = _item.CreateSnapshot(startFrame, totalFrames, hz);
+        var snapshot = _item.CreateSnapshot(startFrame, Math.Max(itemTotalSamples, 1L), hz);
         EnsureConfigured(in snapshot, hz);
 
         if (_cachedQuality == ReverbQuality.High && _convolver is not null && _convolver.HasActiveIr)
@@ -232,6 +240,8 @@ internal sealed class SpaceAudioProcessor : AudioEffectProcessorBase
     protected override void seek(long position)
     {
         Input?.Seek(position);
+        long frame = _lastHz > 0 ? (long)((double)position / 2 / _lastHz * TimelineFps) : 0L;
+        Services.ServiceLocator.TimelineService.NotifySeek(frame);
         _preDelayL?.Reset();
         _preDelayR?.Reset();
         _geoEngine?.Reset();
