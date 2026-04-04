@@ -144,7 +144,7 @@ internal sealed class RoomVisualHost : FrameworkElement
 
         var gridPen = GetMaterialPen(snap.FloorMaterialId, 100, 0.8);
 
-        if (snap.Shape == SpaceAudio.Enums.RoomShape.Custom && snap.Geometry is { } cg && cg.Vertices.Length > 0)
+        if (snap.Shape == RoomShape.Custom && snap.Geometry is { } cg && cg.Vertices.Length > 0)
         {
             float minX = cg.Vertices.Min(v => v.X), maxX2 = cg.Vertices.Max(v => v.X);
             float minZ = cg.Vertices.Min(v => v.Z), maxZ2 = cg.Vertices.Max(v => v.Z);
@@ -167,7 +167,7 @@ internal sealed class RoomVisualHost : FrameworkElement
         float maxD = snap.Depth;
         float stepW = CalculateGridStep(maxW);
         float stepD = CalculateGridStep(maxD);
-        bool isL = snap.Shape == SpaceAudio.Enums.RoomShape.LShaped;
+        bool isL = snap.Shape == RoomShape.LShaped;
         float hw = maxW * 0.5f;
         float hd = maxD * 0.5f;
 
@@ -223,7 +223,7 @@ internal sealed class RoomVisualHost : FrameworkElement
             lines[lCount++] = (p0, p1);
         }
 
-        if (snap.Shape == SpaceAudio.Enums.RoomShape.LShaped)
+        if (snap.Shape == RoomShape.LShaped)
         {
             AddFace(new(0, 0, 0), new(ww, 0, 0), new(ww, hh, 0), new(0, hh, 0), new(0, 0, -1));
             AddFace(new(hw, 0, hd), new(hw, 0, dd), new(hw, hh, dd), new(hw, hh, hd), new(1, 0, 0));
@@ -253,35 +253,36 @@ internal sealed class RoomVisualHost : FrameworkElement
             AddLine(new(hw, 0, dd), new(hw, hh, dd));
             AddLine(new(0, 0, dd), new(0, hh, dd));
         }
-        else if (snap.Shape == SpaceAudio.Enums.RoomShape.Cathedral)
+        else if (snap.Shape == RoomShape.Cathedral)
         {
-            float hc = hh * 1.5f;
-            AddFace(new(0, 0, 0), new(hw, 0, 0), new(hw, hc, 0), new(0, hh, 0), new(0, 0, -1));
-            AddFace(new(hw, 0, 0), new(ww, 0, 0), new(ww, hh, 0), new(hw, hc, 0), new(0, 0, -1));
-            AddFace(new(ww, 0, dd), new(hw, 0, dd), new(hw, hc, dd), new(ww, hh, dd), new(0, 0, 1));
-            AddFace(new(hw, 0, dd), new(0, 0, dd), new(0, hh, dd), new(hw, hc, dd), new(0, 0, 1));
-            AddFace(new(0, 0, dd), new(0, 0, 0), new(0, hh, 0), new(0, hh, dd), new(-1, 0, 0));
-            AddFace(new(ww, 0, 0), new(ww, 0, dd), new(ww, hh, dd), new(ww, hh, 0), new(1, 0, 0));
-            AddFace(new(0, hh, 0), new(hw, hc, 0), new(hw, hc, dd), new(0, hh, dd), new(-0.5f, 1, 0));
-            AddFace(new(hw, hc, 0), new(ww, hh, 0), new(ww, hh, dd), new(hw, hc, dd), new(0.5f, 1, 0));
+            float hs = hh * 0.6f;
+            float hc = hh;
+            AddFace(new(0, 0, 0), new(hw, 0, 0), new(hw, hc, 0), new(0, hs, 0), new(0, 0, -1));
+            AddFace(new(hw, 0, 0), new(ww, 0, 0), new(ww, hs, 0), new(hw, hc, 0), new(0, 0, -1));
+            AddFace(new(ww, 0, dd), new(hw, 0, dd), new(hw, hc, dd), new(ww, hs, dd), new(0, 0, 1));
+            AddFace(new(hw, 0, dd), new(0, 0, dd), new(0, hs, dd), new(hw, hc, dd), new(0, 0, 1));
+            AddFace(new(0, 0, dd), new(0, 0, 0), new(0, hs, 0), new(0, hs, dd), new(-1, 0, 0));
+            AddFace(new(ww, 0, 0), new(ww, 0, dd), new(ww, hs, dd), new(ww, hs, 0), new(1, 0, 0));
+            AddFace(new(0, hs, 0), new(hw, hc, 0), new(hw, hc, dd), new(0, hs, dd), new(-0.5f, 1, 0));
+            AddFace(new(hw, hc, 0), new(ww, hs, 0), new(ww, hs, dd), new(hw, hc, dd), new(0.5f, 1, 0));
 
             AddLine(new(0, 0, 0), new(ww, 0, 0));
             AddLine(new(0, 0, dd), new(ww, 0, dd));
             AddLine(new(0, 0, 0), new(0, 0, dd));
             AddLine(new(ww, 0, 0), new(ww, 0, dd));
-            AddLine(new(0, hh, 0), new(hw, hc, 0));
-            AddLine(new(hw, hc, 0), new(ww, hh, 0));
-            AddLine(new(0, hh, dd), new(hw, hc, dd));
-            AddLine(new(hw, hc, dd), new(ww, hh, dd));
-            AddLine(new(0, 0, 0), new(0, hh, 0));
-            AddLine(new(ww, 0, 0), new(ww, hh, 0));
+            AddLine(new(0, hs, 0), new(hw, hc, 0));
+            AddLine(new(hw, hc, 0), new(ww, hs, 0));
+            AddLine(new(0, hs, dd), new(hw, hc, dd));
+            AddLine(new(hw, hc, dd), new(ww, hs, dd));
+            AddLine(new(0, 0, 0), new(0, hs, 0));
+            AddLine(new(ww, 0, 0), new(ww, hs, 0));
             AddLine(new(hw, hc, 0), new(hw, hc, dd));
-            AddLine(new(0, 0, dd), new(0, hh, dd));
-            AddLine(new(ww, 0, dd), new(ww, hh, dd));
-            AddLine(new(0, hh, 0), new(0, hh, dd));
-            AddLine(new(ww, hh, 0), new(ww, hh, dd));
+            AddLine(new(0, 0, dd), new(0, hs, dd));
+            AddLine(new(ww, 0, dd), new(ww, hs, dd));
+            AddLine(new(0, hs, 0), new(0, hs, dd));
+            AddLine(new(ww, hs, 0), new(ww, hs, dd));
         }
-        else if (snap.Shape == SpaceAudio.Enums.RoomShape.Studio)
+        else if (snap.Shape == RoomShape.Studio)
         {
             float hs = hh * 0.8f;
             AddFace(new(0, 0, 0), new(ww, 0, 0), new(ww, hh, 0), new(0, hh, 0), new(0, 0, -1));
@@ -303,7 +304,7 @@ internal sealed class RoomVisualHost : FrameworkElement
             AddLine(new(0, 0, dd), new(0, hs, dd));
             AddLine(new(ww, 0, dd), new(ww, hs, dd));
         }
-        else if (snap.Shape == SpaceAudio.Enums.RoomShape.Custom && snap.Geometry is { } customGeo
+        else if (snap.Shape == RoomShape.Custom && snap.Geometry is { } customGeo
                  && customGeo.Vertices.Length >= 3 && customGeo.Faces.Length > 0)
         {
             RenderCustomGeometry(dc, viewMat, customGeo, snap, w, h);

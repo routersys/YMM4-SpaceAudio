@@ -179,6 +179,10 @@ public sealed class SpaceAudioEffect : AudioEffectBase
             sx = sc.X; sz = sc.Z;
             var lc = geometry.ClampToPolygonXZ(lx, lz);
             lx = lc.X; lz = lc.Z;
+            var syBounds = geometry.GetYBoundsAtXZ(sx, sz, 0, h);
+            sy = Math.Clamp(sy, syBounds.MinY, syBounds.MaxY);
+            var lyBounds = geometry.GetYBoundsAtXZ(lx, lz, 0, h);
+            ly = Math.Clamp(ly, lyBounds.MinY, lyBounds.MaxY);
         }
         else
         {
@@ -186,9 +190,9 @@ public sealed class SpaceAudioEffect : AudioEffectBase
             sz = Math.Clamp(sz, 0, d);
             lx = Math.Clamp(lx, 0, w);
             lz = Math.Clamp(lz, 0, d);
+            sy = Math.Clamp(sy, 0, h);
+            ly = Math.Clamp(ly, 0, h);
         }
-        sy = Math.Clamp(sy, 0, h);
-        ly = Math.Clamp(ly, 0, h);
 
         return new RoomSnapshot(
             w, h, d,

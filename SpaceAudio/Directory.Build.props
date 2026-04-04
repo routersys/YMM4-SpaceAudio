@@ -1,6 +1,5 @@
 ﻿<Project>
   <PropertyGroup>
-	  <YMM4DirPath>R:\Cache\YukkuriMovieMaker_v4_Lite\</YMM4DirPath>
-	  <!-- <YMM4DirPath>C:\Program Files\YukkuriMovieMaker_v4_Lite_Dev\</YMM4DirPath> -->
+	  <YMM4DirPath>C:\Program Files\YukkuriMovieMaker_v4_Lite_Dev\</YMM4DirPath>
   </PropertyGroup>
 </Project>
