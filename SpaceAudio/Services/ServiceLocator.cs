@@ -1,10 +1,29 @@
-﻿using SpaceAudio.Interfaces;
+using SpaceAudio.Interfaces;
 
 namespace SpaceAudio.Services;
 
 public static class ServiceLocator
 {
     private static volatile IToastPresenter? _registeredPresenter;
+
+    private sealed class NullUserNotificationService : IUserNotificationService
+    {
+        public static readonly NullUserNotificationService Instance = new();
+
+        private NullUserNotificationService() { }
+
+        public void ShowError(string message) { }
+        public void ShowWarning(string message) { }
+        public void ShowInfo(string message) { }
+        public Task<bool> ConfirmAsync(string message, string title) => Task.FromResult(false);
+        public Task<string?> PromptAsync(string message, string title, string defaultText = "") => Task.FromResult<string?>(null);
+    }
+
+    private static IUserNotificationService ResolveForFileService()
+    {
+        var presenter = _registeredPresenter;
+        return presenter is not null ? LazyNotification.Value : NullUserNotificationService.Instance;
+    }
 
     private static readonly Lazy<IUserNotificationService> LazyNotification =
         new(() => new UserNotificationService(
@@ -23,10 +42,10 @@ public static class ServiceLocator
         new(() => new UpdateService());
 
     private static readonly Lazy<IRoomGeometryService> LazyGeometry =
-        new(() => new RoomGeometryService(LazyNotification.Value));
+        new(() => new RoomGeometryService(ResolveForFileService()));
 
     private static readonly Lazy<IMaterialService> LazyMaterial =
-        new(() => new MaterialService(LazyNotification.Value));
+        new(() => new MaterialService(ResolveForFileService()));
 
     private static readonly Lazy<IPlaybackTimelineService> LazyTimeline =
         new(() => new PlaybackTimelineService());
